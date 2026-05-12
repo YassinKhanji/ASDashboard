@@ -165,12 +165,12 @@ export default function DiscussionsPage() {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Tag size={16} className="text-text-secondary" />
                   </div>
-                  <select className="w-full bg-glass-surface border border-glass-border rounded-xl pl-10 pr-4 py-2.5 text-white appearance-none focus:outline-none focus:border-accent-cyan transition-colors" value={form.tag} onChange={(e) => setForm((p) => ({ ...p, tag: e.target.value }))}>
-                    <option value="" className="bg-background text-white">None</option>
-                    <option value="QUESTION" className="bg-background text-white">Question</option>
-                    <option value="FEEDBACK" className="bg-background text-white">Feedback</option>
-                    <option value="DECISION" className="bg-background text-white">Decision</option>
-                    <option value="ACTION_ITEM" className="bg-background text-white">Action item</option>
+                  <select className="form-select pl-10" value={form.tag} onChange={(e) => setForm((p) => ({ ...p, tag: e.target.value }))}>
+                    <option value="">None</option>
+                    <option value="QUESTION">Question</option>
+                    <option value="FEEDBACK">Feedback</option>
+                    <option value="DECISION">Decision</option>
+                    <option value="ACTION_ITEM">Action item</option>
                   </select>
                 </div>
               </div>

@@ -151,6 +151,33 @@
   .btn-glass-primary:hover {
     background-color: rgba(77, 184, 255, 0.3);
   }
+
+  /* Form Elements */
+  .form-input, .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: white;
+    font-size: 0.875rem;
+    width: 100%;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent-cyan);
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 2px rgba(77, 184, 255, 0.2);
+  }
+  .form-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+  .form-select option {
+    background-color: #1a2f3a;
+    color: white;
+  }
 }
 
 /* Custom Scrollbar for a cleaner look */
