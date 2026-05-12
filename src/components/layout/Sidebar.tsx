@@ -146,10 +146,10 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Floating Search Button */}
       <button 
-        className="fixed bottom-6 right-6 w-14 h-14 bg-accent-cyan rounded-full shadow-[0_4px_20px_rgba(77,184,255,0.4)] flex items-center justify-center text-black z-40 md:hidden transition-transform active:scale-95 no-print"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-full flex items-center justify-center text-white z-40 md:hidden transition-all active:scale-95 hover:bg-white/10 no-print"
         onClick={() => setIsMobileSearchOpen(true)}
       >
-        <Search size={24} strokeWidth={2.5} />
+        <Search size={24} strokeWidth={2} />
       </button>
 
       {/* Mobile Search Overlay */}
