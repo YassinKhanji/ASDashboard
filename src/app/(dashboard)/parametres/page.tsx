@@ -102,6 +102,22 @@ export default function ParametresPage() {
     } catch { /* silent */ }
   }
 
+  async function handleDeleteUser(u: UserData) {
+    if (!confirm(`Are you sure you want to delete ${u.name}? This action cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/parametres/users/${u.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setUsers(prev => prev.filter(x => x.id !== u.id));
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete user");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred");
+    }
+  }
+
   // ─── Room CRUD ────────────────────────────────────────
   function openCreateRoom() {
     setEditingRoom(null);
@@ -254,6 +270,11 @@ export default function ParametresPage() {
                         <button onClick={() => toggleUserActive(u)} className={`p-2 rounded-lg transition-colors ${u.isActive ? "text-text-secondary hover:text-red-400 hover:bg-red-500/10" : "text-text-secondary hover:text-[#a8e063] hover:bg-[#a8e063]/10"}`} title={u.isActive ? "Deactivate" : "Activate"}>
                           <Power size={14} />
                         </button>
+                        {session?.user?.id !== u.id && (
+                          <button onClick={() => handleDeleteUser(u)} className="p-2 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -273,7 +294,10 @@ export default function ParametresPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => openEditUser(u)} className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/10"><Edit3 size={14} /></button>
-                    <button onClick={() => toggleUserActive(u)} className="p-1.5 rounded-lg text-text-secondary hover:text-red-400"><Power size={14} /></button>
+                    <button onClick={() => toggleUserActive(u)} className="p-1.5 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10"><Power size={14} /></button>
+                    {session?.user?.id !== u.id && (
+                      <button onClick={() => handleDeleteUser(u)} className="p-1.5 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10"><Trash2 size={14} /></button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-2">

@@ -68,3 +68,27 @@ export async function PATCH(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  // Prevent deleting self
+  if (id === session.user.id) {
+    return NextResponse.json({ error: "Cannot delete your own account." }, { status: 400 });
+  }
+
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  await prisma.user.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
+}
