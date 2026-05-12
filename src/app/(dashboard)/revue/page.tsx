@@ -65,7 +65,8 @@ export default async function RevuePage() {
               <p className="text-sm">You're all caught up! All submitted projects have been reviewed.</p>
             </div>
           ) : (
-          {/* Desktop Table View */}
+            <>
+            {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
@@ -136,6 +137,7 @@ export default async function RevuePage() {
               </div>
             ))}
           </div>
+          </>
           )}
         </div>
 
