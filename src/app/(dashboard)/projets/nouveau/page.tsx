@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Save, Send, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Send, Check, Plus, X } from "lucide-react";
+import SessionBuilder, { SessionPattern } from "@/components/ui/SessionBuilder";
 
 const STEPS = ["Basic Info", "Schedule", "Team", "Budget", "Marketing", "Review"];
 
@@ -15,6 +16,7 @@ export default function NewProjectPage() {
   const [saving, setSaving] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [conflictBlock, setConflictBlock] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", type: "COURSE" as string,
     targetAgeGroup: "", language: "Arabic",
@@ -23,7 +25,8 @@ export default function NewProjectPage() {
     publicDescription: "", promoNotes: "",
     enrollmentOpen: "", enrollmentClose: "",
     leadInstructorId: "", coInstructorIds: [] as string[], helperIds: [] as string[],
-    roomId: "", sessionTimes: "",
+    roomId: "", 
+    sessionPatterns: [{ days: [1, 3], startTime: "16:00", endTime: "17:30" }] as SessionPattern[],
   });
 
   useEffect(() => {
@@ -35,11 +38,61 @@ export default function NewProjectPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
+  // ─── Conflict validation before save/next ─────────────
+
+  async function validateConflicts(): Promise<boolean> {
+    if (!form.roomId || !form.startDate || !form.endDate) return true;
+    
+    const validSessions = form.sessionPatterns.filter(s => s.days.length > 0 && s.startTime && s.endTime && s.startTime < s.endTime);
+    if (validSessions.length === 0) return true;
+
+    try {
+      const res = await fetch("/api/conflicts/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: form.roomId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          sessions: validSessions,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.hardConflicts?.length > 0) {
+          const conflictNames = [...new Set(data.hardConflicts.map((c: any) => c.projectName))].join(", ");
+          alert(`Cannot proceed — scheduling conflict with approved project(s): ${conflictNames}. Please resolve the conflicts in the Schedule step.`);
+          setConflictBlock(true);
+          return false;
+        }
+      }
+    } catch (e) {
+      console.error("Conflict check failed:", e);
+    }
+    setConflictBlock(false);
+    return true;
+  }
+
+  async function handleNext() {
+    if (currentStep === 1) {
+      const ok = await validateConflicts();
+      if (!ok) return;
+    }
+    setCurrentStep(currentStep + 1);
+  }
+
   async function handleSave(submit = false) {
     if (!form.title) {
       alert("Please provide a project title before saving.");
       return;
     }
+
+    // Validate conflicts before saving
+    if (form.roomId && form.startDate && form.endDate) {
+      const ok = await validateConflicts();
+      if (!ok) return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/projets", {
@@ -60,6 +113,28 @@ export default function NewProjectPage() {
       alert("An unexpected error occurred while saving.");
     }
     finally { setSaving(false); }
+  }
+
+  // ─── Session display for Review step ──────────────────
+
+  const DAY_LABELS: Record<number, string> = {
+    0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat",
+  };
+
+  function formatSessionPatterns(): string {
+    return form.sessionPatterns
+      .filter(s => s.days.length > 0)
+      .map(s => {
+        const days = s.days.map(d => DAY_LABELS[d]).join(", ");
+        const formatTime = (t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
+          const ampm = h >= 12 ? "PM" : "AM";
+          return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+        };
+        return `${days} ${formatTime(s.startTime)} – ${formatTime(s.endTime)}`;
+      })
+      .join(" · ");
   }
 
   return (
@@ -138,26 +213,30 @@ export default function NewProjectPage() {
             <div className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-semibold text-text-secondary mb-1.5">Start Date</label>
+                  <label className="block text-sm font-semibold text-text-secondary mb-1.5">Start Date <span className="text-accent-yellow">*</span></label>
                   <input className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-accent-cyan transition-colors color-scheme-dark" type="date" value={form.startDate} onChange={e => updateField("startDate", e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-text-secondary mb-1.5">End Date</label>
+                  <label className="block text-sm font-semibold text-text-secondary mb-1.5">End Date <span className="text-accent-yellow">*</span></label>
                   <input className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-accent-cyan transition-colors color-scheme-dark" type="date" value={form.endDate} onChange={e => updateField("endDate", e.target.value)} />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Room</label>
+                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Room <span className="text-accent-yellow">*</span></label>
                 <select className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-accent-cyan transition-colors appearance-none" value={form.roomId} onChange={e => updateField("roomId", e.target.value)}>
                   <option value="" className="bg-background text-white">Select a room</option>
                   {rooms.map(r => <option key={r.id} value={r.id} className="bg-background text-white">{r.name} (capacity: {r.capacity})</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Session Times</label>
-                <textarea className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white placeholder:text-text-secondary/50 focus:outline-none focus:border-accent-cyan transition-colors min-h-[100px]" value={form.sessionTimes} onChange={e => updateField("sessionTimes", e.target.value)} placeholder="E.g. Monday and Wednesday, 4:00 PM - 5:30 PM" />
-                <span className="text-xs text-text-secondary mt-1.5 block">Describe the recurring days and times</span>
-              </div>
+
+              {/* Session Builder */}
+              <SessionBuilder
+                sessions={form.sessionPatterns}
+                onChange={(sessions) => updateField("sessionPatterns", sessions)}
+                roomId={form.roomId}
+                startDate={form.startDate}
+                endDate={form.endDate}
+              />
             </div>
           </div>
         )}
@@ -262,6 +341,8 @@ export default function NewProjectPage() {
                 ["Type", form.type === "COURSE" ? "Course" : form.type === "WORKSHOP" ? "Workshop" : "Activity"],
                 ["Age Group", form.targetAgeGroup || "—"],
                 ["Dates", `${form.startDate || "—"} → ${form.endDate || "—"}`],
+                ["Room", rooms.find(r => r.id === form.roomId)?.name || "—"],
+                ["Sessions", formatSessionPatterns() || "—"],
                 ["Registration Fee", form.registrationFee.toLocaleString("en-CA", { style: "currency", currency: "CAD" })],
                 ["Capacity", `${form.maxCapacity} students`],
               ].map(([label, val], idx) => (
@@ -283,7 +364,7 @@ export default function NewProjectPage() {
               {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Draft
             </button>
             {currentStep < STEPS.length - 1 ? (
-              <button className="btn-glass btn-glass-primary" onClick={() => setCurrentStep(currentStep + 1)}>
+              <button className="btn-glass btn-glass-primary" onClick={handleNext}>
                 Next <ArrowRight size={16} />
               </button>
             ) : (

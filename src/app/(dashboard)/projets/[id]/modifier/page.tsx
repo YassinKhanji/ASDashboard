@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Save, Check, AlertTriangle } from "lucide-react";
+import SessionBuilder, { SessionPattern } from "@/components/ui/SessionBuilder";
 
 const STEPS = ["Basic Info", "Schedule", "Team", "Budget", "Marketing"];
 
@@ -19,6 +20,7 @@ export default function EditProjectPage() {
   const [error, setError] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [conflictBlock, setConflictBlock] = useState(false);
   const [form, setForm] = useState({
     title: "", description: "", type: "COURSE",
     targetAgeGroup: "", language: "Arabic",
@@ -28,6 +30,8 @@ export default function EditProjectPage() {
     maxCapacity: 20,
     publicDescription: "", promoNotes: "",
     enrollmentOpen: "", enrollmentClose: "",
+    roomId: "",
+    sessionPatterns: [{ days: [], startTime: "16:00", endTime: "17:30" }] as SessionPattern[],
   });
 
   useEffect(() => {
@@ -38,6 +42,18 @@ export default function EditProjectPage() {
     ]).then(([project, roomsData, staffData]) => {
       setRooms(roomsData);
       setStaffList(staffData);
+
+      // Parse session patterns from stored JSON
+      let sessionPatterns: SessionPattern[] = [{ days: [], startTime: "16:00", endTime: "17:30" }];
+      if (project.sessionPatterns && Array.isArray(project.sessionPatterns)) {
+        sessionPatterns = project.sessionPatterns;
+      } else if (project.sessionPatternsJson) {
+        try {
+          const parsed = JSON.parse(project.sessionPatternsJson);
+          if (Array.isArray(parsed) && parsed.length > 0) sessionPatterns = parsed;
+        } catch {}
+      }
+
       setForm({
         title: project.title || "",
         description: project.description || "",
@@ -56,6 +72,8 @@ export default function EditProjectPage() {
         promoNotes: project.promoNotes || "",
         enrollmentOpen: project.enrollmentOpen ? project.enrollmentOpen.split("T")[0] : "",
         enrollmentClose: project.enrollmentClose ? project.enrollmentClose.split("T")[0] : "",
+        roomId: project.roomId || "",
+        sessionPatterns,
       });
       setLoading(false);
     }).catch(() => {
@@ -68,7 +86,57 @@ export default function EditProjectPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
+  // ─── Conflict validation before save/next ─────────────
+
+  async function validateConflicts(): Promise<boolean> {
+    if (!form.roomId || !form.startDate || !form.endDate) return true;
+    
+    const validSessions = form.sessionPatterns.filter(s => s.days.length > 0 && s.startTime && s.endTime && s.startTime < s.endTime);
+    if (validSessions.length === 0) return true;
+
+    try {
+      const res = await fetch("/api/conflicts/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: form.roomId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          sessions: validSessions,
+          excludeProjectId: id,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.hardConflicts?.length > 0) {
+          const conflictNames = [...new Set(data.hardConflicts.map((c: any) => c.projectName))].join(", ");
+          alert(`Cannot proceed — scheduling conflict with approved project(s): ${conflictNames}. Please resolve the conflicts in the Schedule step.`);
+          setConflictBlock(true);
+          return false;
+        }
+      }
+    } catch (e) {
+      console.error("Conflict check failed:", e);
+    }
+    setConflictBlock(false);
+    return true;
+  }
+
+  async function handleNext() {
+    if (currentStep === 1) {
+      const ok = await validateConflicts();
+      if (!ok) return;
+    }
+    setCurrentStep(currentStep + 1);
+  }
+
   async function handleSave() {
+    // Validate conflicts before saving
+    if (form.roomId && form.startDate && form.endDate) {
+      const ok = await validateConflicts();
+      if (!ok) return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/projets/${id}`, {
@@ -187,14 +255,31 @@ export default function EditProjectPage() {
             <div className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className={labelClass}>Start Date</label>
+                  <label className={labelClass}>Start Date <span className="text-accent-yellow">*</span></label>
                   <input className={`${inputClass} color-scheme-dark`} type="date" value={form.startDate} onChange={e => updateField("startDate", e.target.value)} />
                 </div>
                 <div>
-                  <label className={labelClass}>End Date</label>
+                  <label className={labelClass}>End Date <span className="text-accent-yellow">*</span></label>
                   <input className={`${inputClass} color-scheme-dark`} type="date" value={form.endDate} onChange={e => updateField("endDate", e.target.value)} />
                 </div>
               </div>
+              <div>
+                <label className={labelClass}>Room <span className="text-accent-yellow">*</span></label>
+                <select className={selectClass} value={form.roomId} onChange={e => updateField("roomId", e.target.value)}>
+                  <option value="" className="bg-background text-white">Select a room</option>
+                  {rooms.map(r => <option key={r.id} value={r.id} className="bg-background text-white">{r.name} (capacity: {r.capacity})</option>)}
+                </select>
+              </div>
+
+              {/* Session Builder */}
+              <SessionBuilder
+                sessions={form.sessionPatterns}
+                onChange={(sessions) => updateField("sessionPatterns", sessions)}
+                roomId={form.roomId}
+                startDate={form.startDate}
+                endDate={form.endDate}
+                excludeProjectId={id}
+              />
             </div>
           </div>
         )}
@@ -297,7 +382,7 @@ export default function EditProjectPage() {
               {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Changes
             </button>
             {currentStep < STEPS.length - 1 && (
-              <button className="btn-glass" onClick={() => setCurrentStep(currentStep + 1)}>
+              <button className="btn-glass" onClick={handleNext}>
                 Next <ArrowRight size={16} />
               </button>
             )}

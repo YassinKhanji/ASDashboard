@@ -16,6 +16,7 @@ export async function GET(
     where: { id },
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
+      room: { select: { id: true, name: true, capacity: true, color: true } },
       staff: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
       sessions: { include: { room: true }, orderBy: { startTime: "asc" } },
       enrollments: { include: { student: true }, orderBy: { enrolledAt: "desc" } },
@@ -25,7 +26,131 @@ export async function GET(
   });
 
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  return NextResponse.json(project);
+
+  // Parse stored session patterns for the response
+  let sessionPatterns = null;
+  try {
+    if (project.sessionPatternsJson) sessionPatterns = JSON.parse(project.sessionPatternsJson);
+  } catch {}
+
+  return NextResponse.json({ ...project, sessionPatterns });
+}
+
+// ─── Helper: Generate recurring session records ─────────
+
+interface SessionPatternInput {
+  days: number[];      // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime: string;   // "HH:MM"
+  endTime: string;     // "HH:MM"
+}
+
+async function generateSessionRecords(
+  projectId: string,
+  roomId: string,
+  startDate: Date,
+  endDate: Date,
+  patterns: SessionPatternInput[]
+) {
+  const sessions: {
+    projectId: string;
+    roomId: string;
+    startTime: Date;
+    endTime: Date;
+  }[] = [];
+
+  for (const pattern of patterns) {
+    if (!pattern.days?.length || !pattern.startTime || !pattern.endTime) continue;
+
+    const [sh, sm] = pattern.startTime.split(":").map(Number);
+    const [eh, em] = pattern.endTime.split(":").map(Number);
+
+    for (const targetDay of pattern.days) {
+      // Find first occurrence of this day of week from startDate
+      let current = new Date(startDate);
+      while (current.getDay() !== targetDay) {
+        current.setDate(current.getDate() + 1);
+      }
+
+      while (current <= endDate) {
+        const sessionStart = new Date(current);
+        sessionStart.setHours(sh, sm, 0, 0);
+
+        const sessionEnd = new Date(current);
+        sessionEnd.setHours(eh, em, 0, 0);
+
+        sessions.push({
+          projectId,
+          roomId,
+          startTime: sessionStart,
+          endTime: sessionEnd,
+        });
+
+        current.setDate(current.getDate() + 7);
+      }
+    }
+  }
+
+  if (sessions.length > 0) {
+    await prisma.session.createMany({ data: sessions });
+  }
+
+  return sessions.length;
+}
+
+// ─── Helper: Check for scheduling conflicts ─────────────
+
+async function checkApprovalConflicts(projectId: string) {
+  // Get all sessions for this project
+  const projectSessions = await prisma.session.findMany({
+    where: { projectId, isCancelled: false },
+    include: { room: { select: { name: true } } },
+  });
+
+  const conflicts: {
+    projectName: string;
+    roomName: string;
+    day: string;
+    time: string;
+  }[] = [];
+
+  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  for (const sess of projectSessions) {
+    // Find overlapping sessions in the same room from other approved/active projects
+    const overlapping = await prisma.session.findFirst({
+      where: {
+        roomId: sess.roomId,
+        isCancelled: false,
+        projectId: { not: projectId },
+        project: { status: { in: ["APPROVED", "ACTIVE"] } },
+        startTime: { lt: sess.endTime },
+        endTime: { gt: sess.startTime },
+      },
+      include: {
+        project: { select: { title: true } },
+        room: { select: { name: true } },
+      },
+    });
+
+    if (overlapping) {
+      const sessDate = new Date(sess.startTime);
+      conflicts.push({
+        projectName: overlapping.project.title,
+        roomName: overlapping.room.name,
+        day: DAY_NAMES[sessDate.getDay()],
+        time: `${sessDate.getHours().toString().padStart(2, "0")}:${sessDate.getMinutes().toString().padStart(2, "0")}–${new Date(sess.endTime).getHours().toString().padStart(2, "0")}:${new Date(sess.endTime).getMinutes().toString().padStart(2, "0")}`,
+      });
+    }
+  }
+
+  // De-duplicate
+  const seen = new Set<string>();
+  return conflicts.filter(c => {
+    const key = `${c.projectName}-${c.day}-${c.time}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function PATCH(
@@ -66,8 +191,46 @@ export async function PATCH(
         });
         break;
 
-      case "approve":
+      case "approve": {
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        
+        // Generate sessions from stored patterns on the project
+        const sessionPatterns: SessionPatternInput[] = project.sessionPatternsJson
+          ? JSON.parse(project.sessionPatternsJson)
+          : [];
+        const roomId = project.roomId;
+
+        if (sessionPatterns.length > 0 && roomId && project.startDate && project.endDate) {
+          // Clear any existing sessions first
+          await prisma.session.deleteMany({ where: { projectId: id } });
+          // Generate new session records
+          await generateSessionRecords(
+            id,
+            roomId,
+            new Date(project.startDate),
+            new Date(project.endDate),
+            sessionPatterns
+          );
+        }
+
+        // Check for scheduling conflicts with other approved projects
+        const conflicts = await checkApprovalConflicts(id);
+        if (conflicts.length > 0) {
+          // Roll back generated sessions since approval is blocked
+          // Non-approved projects must not have calendar entries
+          await prisma.session.deleteMany({ where: { projectId: id } });
+
+          const conflictDetails = conflicts.map(c => 
+            `• ${c.projectName} in ${c.roomName} on ${c.day} at ${c.time}`
+          ).join("\n");
+
+          return NextResponse.json({
+            error: "Cannot approve — scheduling conflict detected",
+            conflicts,
+            message: `This project has scheduling conflicts with approved projects:\n${conflictDetails}\n\nResolve the conflicts before approving.`,
+          }, { status: 409 });
+        }
+
         await prisma.project.update({ where: { id }, data: { status: "APPROVED" } });
         await prisma.reviewAction.create({
           data: { projectId: id, reviewerId: fallbackId, action: "APPROVE", notes: body.notes || "" },
@@ -76,10 +239,13 @@ export async function PATCH(
           data: { userId: project.createdById, title: "Project approved", content: `Your project "${project.title}" has been approved.`, link: `/projets/${id}` },
         });
         break;
+      }
 
       case "reject":
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         await prisma.project.update({ where: { id }, data: { status: "REJECTED" } });
+        // Remove all sessions when rejected
+        await prisma.session.deleteMany({ where: { projectId: id } });
         await prisma.reviewAction.create({
           data: { projectId: id, reviewerId: fallbackId, action: "REJECT", notes: body.notes || "" },
         });
@@ -91,6 +257,8 @@ export async function PATCH(
       case "request_revision":
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         await prisma.project.update({ where: { id }, data: { status: "DRAFT" } });
+        // Remove all sessions when revision requested
+        await prisma.session.deleteMany({ where: { projectId: id } });
         await prisma.reviewAction.create({
           data: { projectId: id, reviewerId: fallbackId, action: "REQUEST_REVISION", notes: body.notes || "" },
         });
@@ -109,6 +277,8 @@ export async function PATCH(
 
       case "archive":
         await prisma.project.update({ where: { id }, data: { status: "ARCHIVED" } });
+        // Remove calendar entries when archived
+        await prisma.session.deleteMany({ where: { projectId: id } });
         break;
     }
 
@@ -117,7 +287,7 @@ export async function PATCH(
   }
 
   // Regular update
-  const { startDate, endDate, enrollmentOpen, enrollmentClose, ...rest } = body;
+  const { startDate, endDate, enrollmentOpen, enrollmentClose, sessionPatterns: sp, ...rest } = body;
   const updated = await prisma.project.update({
     where: { id },
     data: {
@@ -126,6 +296,7 @@ export async function PATCH(
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       ...(enrollmentOpen !== undefined && { enrollmentOpen: enrollmentOpen ? new Date(enrollmentOpen) : null }),
       ...(enrollmentClose !== undefined && { enrollmentClose: enrollmentClose ? new Date(enrollmentClose) : null }),
+      ...(sp !== undefined && { sessionPatternsJson: JSON.stringify(sp) }),
     },
   });
   return NextResponse.json(updated);

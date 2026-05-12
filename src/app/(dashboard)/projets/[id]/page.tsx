@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Users, Calendar, DollarSign, Send,
   CheckCircle, XCircle, RotateCcw, Clock, MessageSquare,
-  UserCog, BarChart3, History
+  UserCog, BarChart3, History, AlertTriangle, X
 } from "lucide-react";
 import {
   PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, STAFF_ROLE_LABELS,
@@ -14,6 +14,13 @@ import {
   formatDate, formatDateTime, formatCurrency, formatTime
 } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
+
+interface ConflictDetail {
+  projectName: string;
+  roomName: string;
+  day: string;
+  time: string;
+}
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -24,6 +31,10 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState("info");
   const [reviewNotes, setReviewNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Conflict modal state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictDetails, setConflictDetails] = useState<ConflictDetail[]>([]);
 
   useEffect(() => {
     fetch(`/api/projets/${id}`)
@@ -44,6 +55,15 @@ export default function ProjectDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, notes: reviewNotes }),
       });
+      
+      if (res.status === 409) {
+        // Conflict detected on approval
+        const data = await res.json();
+        setConflictDetails(data.conflicts || []);
+        setShowConflictModal(true);
+        return;
+      }
+
       if (res.ok) {
         const updated = await res.json();
         setProject((prev: any) => ({ ...prev, status: updated.status }));
@@ -184,6 +204,10 @@ export default function ProjectDetailPage() {
                 <div className="font-bold text-white">{project.targetAgeGroup || "—"}</div>
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <span className="label-subtle block mb-1">Room</span>
+                <div className="font-bold text-white">{project.room?.name || "—"}</div>
+              </div>
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <span className="label-subtle block mb-1">Start</span>
                 <div className="font-bold text-white">{project.startDate ? formatDate(project.startDate) : "—"}</div>
               </div>
@@ -201,6 +225,19 @@ export default function ProjectDetailPage() {
                   {project.enrollmentOpen ? formatDate(project.enrollmentOpen) : "—"} → {project.enrollmentClose ? formatDate(project.enrollmentClose) : "—"}
                 </div>
               </div>
+              {project.sessionPatterns && Array.isArray(project.sessionPatterns) && project.sessionPatterns.length > 0 && (
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 sm:col-span-2">
+                  <span className="label-subtle block mb-1">Session Schedule</span>
+                  <div className="font-bold text-white text-sm space-y-1">
+                    {project.sessionPatterns.map((sp: any, i: number) => {
+                      const dayLabels: Record<number, string> = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+                      const days = sp.days?.map((d: number) => dayLabels[d]).join(", ") || "—";
+                      const fmt = (t: string) => { const [h, m] = t.split(":").map(Number); return `${h > 12 ? h - 12 : h || 12}:${m.toString().padStart(2,"0")} ${h >= 12 ? "PM" : "AM"}`; };
+                      return <div key={i}>{days} · {fmt(sp.startTime)} – {fmt(sp.endTime)}</div>;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             
             {project.publicDescription && (
@@ -274,7 +311,14 @@ export default function ProjectDetailPage() {
           <div className="animate-in fade-in duration-300">
             <h3 className="font-bold text-white text-lg mb-6">Sessions ({project.sessions?.length || 0})</h3>
             {!project.sessions?.length ? (
-              <p className="text-text-secondary italic">No sessions scheduled.</p>
+              <div className="text-center py-8">
+                <Calendar size={32} className="mx-auto text-text-secondary/50 mb-3" />
+                <p className="text-text-secondary italic">
+                  {["DRAFT", "SUBMITTED", "UNDER_REVIEW"].includes(project.status)
+                    ? "Sessions will be generated when this project is approved."
+                    : "No sessions scheduled."}
+                </p>
+              </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {project.sessions.map((s: any) => (
@@ -346,6 +390,54 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ─── Conflict Modal ──────────────────────────────────── */}
+      {showConflictModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowConflictModal(false)}>
+          <div className="glass-card w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-red-500/20 shrink-0">
+                  <AlertTriangle size={24} className="text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Cannot Approve</h3>
+                  <p className="text-sm text-text-secondary mt-1">
+                    This project has scheduling conflicts with approved projects.
+                  </p>
+                </div>
+              </div>
+              <button className="p-1 rounded-lg text-text-secondary hover:text-white hover:bg-white/10" onClick={() => setShowConflictModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              {conflictDetails.map((conflict, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <span className="font-bold text-white">{conflict.projectName}</span>
+                    <span className="text-red-300/80 ml-1">
+                      in <strong>{conflict.roomName}</strong> on <strong>{conflict.day}</strong> at <strong>{conflict.time}</strong>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-text-secondary mb-6">
+              Resolve the scheduling conflicts before approving this project. Either change this project&apos;s schedule or adjust the conflicting approved project&apos;s sessions.
+            </p>
+
+            <div className="flex justify-end">
+              <button className="btn-glass" onClick={() => setShowConflictModal(false)}>
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

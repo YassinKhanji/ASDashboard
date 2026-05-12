@@ -93,6 +93,10 @@ async function main() {
       enrollmentOpen: new Date("2026-05-01"),
       enrollmentClose: new Date("2026-05-30"),
       createdById: instructor.id,
+      roomId: "room-a",
+      sessionPatternsJson: JSON.stringify([
+        { days: [1, 3], startTime: "16:00", endTime: "17:30" },
+      ]),
     },
   });
   console.log("✅ Sample project created:", project.title);

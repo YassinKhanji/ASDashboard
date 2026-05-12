@@ -98,8 +98,11 @@ model Project {
   status            ProjectStatus @default(DRAFT)
 
   // Schedule
-  startDate         DateTime?
-  endDate           DateTime?
+  startDate            DateTime?
+  endDate              DateTime?
+  roomId               String?
+  room                 Room?       @relation(fields: [roomId], references: [id])
+  sessionPatternsJson  String?     // JSON: [{days:[1,3],startTime:"16:00",endTime:"17:30"}]
 
   // Budget
   registrationFee   Float?        @default(0)
@@ -148,6 +151,7 @@ model Room {
   color    String    @default("#3b82f6")
 
   sessions Session[]
+  projects Project[]
 }
 
 model Session {

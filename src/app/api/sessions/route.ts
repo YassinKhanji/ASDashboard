@@ -7,9 +7,12 @@ export async function GET() {
   if (!session?.user) return NextResponse.json([], { status: 401 });
 
   const sessions = await prisma.session.findMany({
+    where: {
+      project: { status: { in: ["APPROVED", "ACTIVE"] } },
+    },
     orderBy: { startTime: "asc" },
     include: {
-      project: { select: { id: true, title: true, type: true } },
+      project: { select: { id: true, title: true, type: true, status: true } },
       room: { select: { id: true, name: true, color: true } },
     },
   });

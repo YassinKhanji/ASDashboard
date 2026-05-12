@@ -21,7 +21,6 @@ export async function GET() {
     orderBy: { updatedAt: "desc" },
     include: {
       createdBy: { select: { name: true } },
-      room: { select: { id: true, name: true } },
       _count: { select: { enrollments: true, sessions: true } },
       staff: { include: { user: { select: { name: true } } } },
     },
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { submit, leadInstructorId, coInstructorIds, helperIds, roomId, sessionPatterns, ...projectData } = body;
+  const { submit, leadInstructorId, coInstructorIds, helperIds, roomId, ...projectData } = body;
 
   // Find a valid admin or committee user to assign as creator
   const defaultAdmin = await prisma.user.findFirst({
@@ -55,8 +54,6 @@ export async function POST(req: Request) {
       enrollmentOpen: projectData.enrollmentOpen ? new Date(projectData.enrollmentOpen) : null,
       enrollmentClose: projectData.enrollmentClose ? new Date(projectData.enrollmentClose) : null,
       createdById: defaultAdmin.id,
-      roomId: roomId || null,
-      sessionPatternsJson: sessionPatterns ? JSON.stringify(sessionPatterns) : null,
     },
   });
 
@@ -67,11 +64,44 @@ export async function POST(req: Request) {
     });
   }
 
-  // NOTE: Sessions are NO LONGER generated at creation time.
-  // Session patterns are stored client-side and sessions are generated
-  // only when the project is approved (see PATCH /api/projets/[id]).
-  // This ensures calendar entries only appear for approved projects
-  // and enables proper conflict detection at approval time.
+  // Generate sessions based on patterns
+  if (project.startDate && project.endDate && body.sessionPatterns?.length > 0 && body.roomId) {
+    const sessions = [];
+    const start = new Date(project.startDate);
+    const end = new Date(project.endDate);
+
+    for (const pattern of body.sessionPatterns) {
+      let current = new Date(start);
+      // Adjust to first occurrence of that day of week
+      while (current.getDay() !== pattern.day) {
+        current.setDate(current.getDate() + 1);
+      }
+
+      while (current <= end) {
+        const [sh, sm] = pattern.startTime.split(":").map(Number);
+        const [eh, em] = pattern.endTime.split(":").map(Number);
+        
+        const sessionStart = new Date(current);
+        sessionStart.setHours(sh, sm, 0, 0);
+        
+        const sessionEnd = new Date(current);
+        sessionEnd.setHours(eh, em, 0, 0);
+
+        sessions.push({
+          projectId: project.id,
+          roomId: body.roomId,
+          startTime: sessionStart,
+          endTime: sessionEnd,
+        });
+
+        current.setDate(current.getDate() + 7);
+      }
+    }
+
+    if (sessions.length > 0) {
+      await prisma.session.createMany({ data: sessions });
+    }
+  }
 
   // Notify committee if submitted
   if (submit) {

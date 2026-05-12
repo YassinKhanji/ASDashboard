@@ -48,6 +48,82 @@ export default function CalendrierPage() {
     }).finally(() => setLoading(false));
   }
 
+  function handleSlotClick(date: Date, hour: number, roomId?: string) {
+    setNewSessionData({ date, hour, roomId: roomId || rooms[0]?.id || null });
+    setForm({ projectId: "", duration: 1, notes: "" });
+    setShowNewSessionModal(true);
+  }
+
+  function handleSessionClick(e: React.MouseEvent, session: SessionEvent) {
+    e.stopPropagation();
+    setSelectedSession(session);
+    setShowSessionModal(true);
+  }
+
+  async function handleCancelSession() {
+    if (!selectedSession) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sessions/${selectedSession.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCancelled: true }),
+      });
+      if (res.ok) {
+        setShowSessionModal(false);
+        fetchData();
+      }
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  }
+
+  async function handleDeleteSession() {
+    if (!selectedSession) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sessions/${selectedSession.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setShowSessionModal(false);
+        fetchData();
+      }
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  }
+
+  async function handleCreateSession(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.projectId || !newSessionData.roomId) return;
+    setSaving(true);
+    try {
+      const startTime = new Date(newSessionData.date);
+      startTime.setHours(newSessionData.hour, 0, 0, 0);
+      const endTime = new Date(startTime);
+      endTime.setHours(startTime.getHours() + form.duration);
+
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: form.projectId,
+          roomId: newSessionData.roomId,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          notes: form.notes,
+        }),
+      });
+      if (res.ok) {
+        setShowNewSessionModal(false);
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to create session");
+      }
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  }
+
   function navigate(dir: number) {
     const d = new Date(currentDate);
     if (view === "day") d.setDate(d.getDate() + dir);
