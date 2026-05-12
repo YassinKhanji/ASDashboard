@@ -65,49 +65,77 @@ export default async function RevuePage() {
               <p className="text-sm">You're all caught up! All submitted projects have been reviewed.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-glass-border/50 bg-white/5">
-                    <th className="px-6 py-4 label-subtle">Project</th>
-                    <th className="px-6 py-4 label-subtle">Status</th>
-                    <th className="px-6 py-4 label-subtle">Revisions</th>
-                    <th className="px-6 py-4"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-glass-border/50">
-                  {pendingProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-white/5 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <Link href={`/projets/${project.id}`} className="block font-bold text-white group-hover:text-accent-cyan transition-colors truncate">
-                              {project.title}
-                            </Link>
-                            <div className="text-xs text-text-secondary mt-1">
-                              By {project.createdBy.name} · <span className="glass-badge badge-white !px-1.5 !py-0.5 ml-1">{PROJECT_TYPE_LABELS[project.type]}</span>
-                            </div>
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="border-b border-glass-border/50 bg-white/5">
+                  <th className="px-6 py-4 label-subtle">Project</th>
+                  <th className="px-6 py-4 label-subtle">Status</th>
+                  <th className="px-6 py-4 label-subtle">Revisions</th>
+                  <th className="px-6 py-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-glass-border/50">
+                {pendingProjects.map((project) => (
+                  <tr key={project.id} className="hover:bg-white/5 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <Link href={`/projets/${project.id}`} className="block font-bold text-white group-hover:text-accent-cyan transition-colors truncate">
+                            {project.title}
+                          </Link>
+                          <div className="text-xs text-text-secondary mt-1">
+                            By {project.createdBy.name} · <span className="glass-badge badge-white !px-1.5 !py-0.5 ml-1">{PROJECT_TYPE_LABELS[project.type as keyof typeof PROJECT_TYPE_LABELS]}</span>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`glass-badge ${getStatusColor(project.status)}`}>
-                          {PROJECT_STATUS_LABELS[project.status]}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-white">
-                        {project._count.reviewActions}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link href={`/projets/${project.id}`} className="btn-glass btn-glass-primary inline-flex">
-                          <PlayCircle size={16} /> Review
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`glass-badge ${getStatusColor(project.status)}`}>
+                        {PROJECT_STATUS_LABELS[project.status as keyof typeof PROJECT_STATUS_LABELS]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-white">
+                      {project._count.reviewActions}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link href={`/projets/${project.id}`} className="btn-glass btn-glass-primary inline-flex">
+                        <PlayCircle size={16} /> Review
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden flex flex-col divide-y divide-white/5">
+            {pendingProjects.map((p) => (
+              <div key={p.id} className="p-5 flex flex-col gap-4">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white truncate">{p.title}</h4>
+                    <div className="text-[10px] text-white/40 mt-1 font-bold uppercase tracking-wider">
+                      By {p.createdBy.name} · {PROJECT_TYPE_LABELS[p.type as keyof typeof PROJECT_TYPE_LABELS]}
+                    </div>
+                  </div>
+                  <span className={`glass-badge !px-2 !py-0.5 !text-[9px] ${getStatusColor(p.status)}`}>
+                    {PROJECT_STATUS_LABELS[p.status as keyof typeof PROJECT_STATUS_LABELS]}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                    {p._count.reviewActions} Revisions
+                  </div>
+                  <Link href={`/projets/${p.id}`} className="btn-glass btn-glass-primary !py-1.5 !px-4 !text-xs">
+                    Review
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
           )}
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, FolderKanban, MoreHorizontal } from "lucide-react";
+import { Plus, FolderKanban, MoreHorizontal, ArrowRight } from "lucide-react";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, formatDate } from "@/lib/utils";
 
 interface Project {
@@ -60,14 +60,15 @@ export default function ProjetsPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 mb-6 p-1.5 rounded-full bg-white/10 backdrop-blur-2xl border border-white/20 w-fit max-w-full overflow-x-auto custom-scrollbar">
+          {/* Filter Bar - Responsive Horizontal Scroll */}
+          <div className="flex flex-nowrap overflow-x-auto gap-2 mb-6 p-2 rounded-2xl bg-white/5 border border-white/10 w-full no-scrollbar">
             {["", "DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "ACTIVE", "COMPLETED"].map(s => (
               <button 
                 key={s} 
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`px-5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   filter === s 
-                    ? "bg-accent-cyan/20 text-accent-cyan" 
-                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                    ? "bg-accent-cyan text-black shadow-[0_0_15px_rgba(77,184,255,0.4)]" 
+                    : "text-text-secondary hover:text-white hover:bg-white/10"
                 }`} 
                 onClick={() => setFilter(s)}
               >
@@ -76,7 +77,8 @@ export default function ProjetsPage() {
             ))}
           </div>
 
-          <div className="glass-card p-0 overflow-hidden">
+          {/* Desktop Table View */}
+          <div className="hidden md:block glass-card p-0 overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
@@ -121,6 +123,47 @@ export default function ProjetsPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden flex flex-col gap-4">
+            {filtered.map(p => (
+              <Link key={p.id} href={`/projets/${p.id}`} className="glass-card p-5 flex flex-col gap-4 hover:border-accent-cyan/50 transition-all active:scale-[0.98]">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-white text-lg leading-tight mb-1 truncate">{p.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{(PROJECT_TYPE_LABELS as any)[p.type]}</span>
+                      <span className="w-1 h-1 rounded-full bg-white/20" />
+                      <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider">{p.targetAgeGroup || "All ages"}</span>
+                    </div>
+                  </div>
+                  <span className={`glass-badge !px-2.5 !py-1 !text-[10px] ${getStatusColor(p.status)}`}>
+                    {(PROJECT_STATUS_LABELS as any)[p.status]}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-1">Students</span>
+                    <span className="text-sm font-bold text-white">
+                      {p._count.enrollments} {p.maxCapacity ? `/ ${p.maxCapacity}` : ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-1">Sessions</span>
+                    <span className="text-sm font-bold text-white">{p._count.sessions}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                  <span>Updated {formatDate(p.updatedAt)}</span>
+                  <div className="flex items-center gap-1.5 text-accent-cyan">
+                    Details <ArrowRight size={12} />
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </>
       )}

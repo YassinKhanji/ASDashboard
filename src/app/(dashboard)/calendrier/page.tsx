@@ -90,11 +90,11 @@ export default function CalendrierPage() {
           <p className="text-text-secondary text-sm">Schedule and sessions overview</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="relative flex-1 sm:flex-none">
             <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
             <select 
-              className="appearance-none bg-glass-surface border border-glass-border rounded-xl pl-9 pr-8 py-2 text-sm text-white focus:outline-none focus:border-accent-cyan transition-colors"
+              className="w-full appearance-none bg-glass-surface border border-glass-border rounded-xl pl-9 pr-8 py-2 text-sm text-white focus:outline-none focus:border-accent-cyan transition-colors"
               value={filterRoom} 
               onChange={e => setFilterRoom(e.target.value)}
             >
@@ -103,14 +103,14 @@ export default function CalendrierPage() {
             </select>
           </div>
           
-          <div className="flex p-1 bg-glass-surface border border-glass-border rounded-xl">
+          <div className="flex p-1 bg-glass-surface border border-glass-border rounded-xl flex-1 sm:flex-none">
             {(["day", "week", "month"] as ViewMode[]).map(v => (
               <button 
                 key={v} 
                 onClick={() => setView(v)} 
-                className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                className={`flex-1 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors ${
                   view === v 
-                    ? "bg-accent-cyan/20 text-accent-cyan shadow-sm" 
+                    ? "bg-accent-cyan text-black shadow-sm" 
                     : "text-text-secondary hover:text-white"
                 }`}
               >
@@ -119,9 +119,14 @@ export default function CalendrierPage() {
             ))}
           </div>
           
-          <button className="btn-glass max-sm:hidden" onClick={() => window.print()}>
-            <Printer size={16} /> Print
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button className="flex-1 sm:px-4 py-2 bg-glass-surface border border-glass-border rounded-xl text-xs font-bold text-white hover:bg-white/10" onClick={() => setCurrentDate(new Date())}>
+              Today
+            </button>
+            <button className="flex-1 sm:hidden px-4 py-2 btn-glass" onClick={() => window.print()}>
+              <Printer size={16} className="mx-auto" />
+            </button>
+          </div>
         </div>
       </div>
 

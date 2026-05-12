@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Users, X, AlertTriangle } from "lucide-react";
+import { Plus, Users, X, AlertTriangle, ArrowRight, Mail, Phone } from "lucide-react";
 
 interface Student {
   id: string; firstName: string; lastName: string;
@@ -65,49 +65,101 @@ export default function EtudiantsPage() {
           </button>
         </div>
       ) : (
-        <div className="glass-card p-0 overflow-hidden">
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="border-b border-glass-border/50 bg-white/5">
-                  <th className="px-6 py-4 label-subtle">Name</th>
-                  <th className="px-6 py-4 label-subtle">Parent / Guardian</th>
-                  <th className="px-6 py-4 label-subtle">Contact</th>
-                  <th className="px-6 py-4 label-subtle">Projects</th>
-                  <th className="px-6 py-4 label-subtle">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-glass-border/50">
-                {students.map(s => (
-                  <tr key={s.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 font-bold text-white">
-                      {s.firstName} {s.lastName}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-text-secondary font-medium">
-                      {s.parentName || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-text-secondary">
-                      {s.parentEmail && <div className="text-white mb-0.5">{s.parentEmail}</div>}
-                      {s.parentPhone && <div>{s.parentPhone}</div>}
-                      {(!s.parentEmail && !s.parentPhone) && "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="glass-badge badge-lime">{s._count.enrollments} Enrolled</span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-text-secondary max-w-[200px] truncate">
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block glass-card p-0 overflow-hidden">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-glass-border/50 bg-white/5">
+                    <th className="px-6 py-4 label-subtle">Name</th>
+                    <th className="px-6 py-4 label-subtle">Parent / Guardian</th>
+                    <th className="px-6 py-4 label-subtle">Contact</th>
+                    <th className="px-6 py-4 label-subtle">Projects</th>
+                    <th className="px-6 py-4 label-subtle">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-glass-border/50">
+                  {students.map(s => (
+                    <tr key={s.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-bold text-white">
+                        {s.firstName} {s.lastName}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-text-secondary font-medium">
+                        {s.parentName || "—"}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-text-secondary">
+                        {s.parentEmail && <div className="text-white mb-0.5">{s.parentEmail}</div>}
+                        {s.parentPhone && <div>{s.parentPhone}</div>}
+                        {(!s.parentEmail && !s.parentPhone) && "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="glass-badge badge-lime">{s._count.enrollments} Enrolled</span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-text-secondary max-w-[200px] truncate">
+                        {s.flags && (
+                          <span className="inline-flex items-center gap-1 glass-badge badge-yellow mr-2 !px-2 !py-0.5">
+                            <AlertTriangle size={10} /> {s.flags}
+                          </span>
+                        )}
+                        <span className="truncate" title={s.notes || ""}>{s.notes || "—"}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden flex flex-col gap-4">
+            {students.map(s => (
+              <div key={s.id} className="glass-card p-5 flex flex-col gap-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-white text-lg">{s.firstName} {s.lastName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="glass-badge badge-lime !px-2 !py-0.5 !text-[10px]">{s._count.enrollments} Enrolled</span>
                       {s.flags && (
-                        <span className="inline-flex items-center gap-1 glass-badge badge-yellow mr-2 !px-2 !py-0.5">
+                        <span className="glass-badge badge-yellow !px-2 !py-0.5 !text-[10px] flex items-center gap-1">
                           <AlertTriangle size={10} /> {s.flags}
                         </span>
                       )}
-                      <span className="truncate" title={s.notes || ""}>{s.notes || "—"}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 py-3 border-y border-white/5">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-1">Parent / Guardian</span>
+                    <span className="text-sm font-bold text-white">{s.parentName || "None"}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {s.parentEmail && (
+                      <div className="flex items-center gap-2 text-xs text-text-secondary truncate">
+                        <Mail size={12} className="shrink-0" />
+                        <span className="truncate">{s.parentEmail}</span>
+                      </div>
+                    )}
+                    {s.parentPhone && (
+                      <div className="flex items-center gap-2 text-xs text-text-secondary truncate">
+                        <Phone size={12} className="shrink-0" />
+                        <span className="truncate">{s.parentPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {s.notes && (
+                  <div className="text-xs text-text-secondary/80 bg-black/20 p-3 rounded-xl border border-white/5 italic">
+                    "{s.notes}"
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+        </>
       )}
 
       {/* Add Student Modal */}
@@ -122,7 +174,7 @@ export default function EtudiantsPage() {
             </div>
             
             <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1.5">First name <span className="text-accent-yellow">*</span></label>
                   <input className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white placeholder:text-text-secondary/50 focus:outline-none focus:border-accent-cyan transition-colors" required value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} />
