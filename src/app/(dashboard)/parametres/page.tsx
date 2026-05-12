@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Settings, Users, DoorOpen, Plus, X, Save } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/permissions";

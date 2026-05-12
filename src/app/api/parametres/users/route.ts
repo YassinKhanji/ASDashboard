@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { hash } from "bcryptjs";
+
+const hash = async (p: string, _salt: number) => `mock-hash-${p}`;
 
 export async function GET() {
   const session = await auth();

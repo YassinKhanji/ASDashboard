@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Send } from "lucide-react";
 import { formatDateTime, MESSAGE_TAG_LABELS, getInitials } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 
 interface Message {
   id: string;

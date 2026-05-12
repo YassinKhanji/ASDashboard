@@ -13,7 +13,7 @@ import {
   ENROLLMENT_STATUS_LABELS, REVIEW_ACTION_LABELS,
   formatDate, formatDateTime, formatCurrency, formatTime
 } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
