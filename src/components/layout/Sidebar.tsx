@@ -89,7 +89,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   return (
     <>
       {/* Mobile Top Bar */}
-      <header className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-xl border-b border-white/10 z-50 flex md:hidden items-center justify-between no-print">
+      <header className="fixed top-0 left-0 right-0 h-16 px-4 bg-white/5 backdrop-blur-3xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] z-50 flex md:hidden items-center justify-between no-print">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
