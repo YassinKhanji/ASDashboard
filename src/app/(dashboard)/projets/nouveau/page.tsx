@@ -36,6 +36,10 @@ export default function NewProjectPage() {
   }
 
   async function handleSave(submit = false) {
+    if (!form.title) {
+      alert("Please provide a project title before saving.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/projets", {
@@ -45,9 +49,16 @@ export default function NewProjectPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        alert(submit ? "Project submitted successfully!" : "Draft saved successfully!");
         router.push(`/projets/${data.id}`);
+      } else {
+        const errData = await res.json();
+        alert(`Error: ${errData.error || "Failed to save project"}`);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      alert("An unexpected error occurred while saving.");
+    }
     finally { setSaving(false); }
   }
 
@@ -268,7 +279,7 @@ export default function NewProjectPage() {
             <ArrowLeft size={16} /> Previous
           </button>
           <div className="flex gap-3">
-            <button className="btn-glass" onClick={() => handleSave(false)} disabled={saving}>
+            <button className="btn-glass" onClick={() => handleSave(false)} disabled={saving || !form.title}>
               {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Save size={16} />} Save Draft
             </button>
             {currentStep < STEPS.length - 1 ? (
