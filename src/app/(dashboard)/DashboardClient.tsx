@@ -25,10 +25,10 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
       </header>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0">
         
         {/* Left Column (Activity) */}
-        <div className="col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-full">
+        <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[200px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
             <h2 className="text-sm font-bold">Enrollments (Activity)</h2>
             <button className="text-[10px] text-white/60 flex items-center gap-1 hover:text-white">
@@ -62,7 +62,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
 
         {/* Middle Column (Small stats) */}
-        <div className="col-span-3 flex flex-col gap-3 h-full">
+        <div className="col-span-1 md:col-span-3 flex flex-col gap-3 h-full min-h-[180px] md:min-h-0">
           <div className="flex-1 bg-white/5 rounded-[24px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <Users size={16} className="text-[#4db8ff]" />
@@ -93,14 +93,14 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
 
         {/* Right Column (Overview) */}
-        <div className="col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-full flex flex-col">
+        <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-[200px] md:h-full flex flex-col">
           <div className="flex justify-between items-center mb-2 shrink-0">
             <h2 className="text-sm font-bold">Project Breakdown</h2>
             <div className="text-[10px] text-white/60 font-bold">{stats.projectCount} Total</div>
           </div>
           
           <div className="flex-1 flex items-center justify-center relative min-h-0">
-            <svg className="h-full max-h-[120px] aspect-square transform -rotate-90" viewBox="0 0 100 100">
+            <svg className="h-full max-h-[100px] md:max-h-[120px] aspect-square transform -rotate-90" viewBox="0 0 100 100">
               {/* Background (Gray) */}
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="12" fill="none" />
               {/* Pending (Cyan) */}
@@ -133,10 +133,10 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-12 gap-4 mt-4 shrink-0 h-[170px]">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4 shrink-0 h-auto md:h-[170px]">
         
         {/* Recent Projects (Like Challenges) */}
-        <div className="col-span-8 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col h-full">
+        <div className="col-span-1 md:col-span-8 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col h-[200px] md:h-full">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-bold">Recent Projects</h2>
             <Link href="/projets" className="text-[10px] text-white/60 hover:text-white flex items-center gap-1">View all <ArrowRight size={10}/></Link>
@@ -174,7 +174,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
 
         {/* Upcoming Sessions */}
-        <div className="col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 h-full flex flex-col">
+        <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 h-[200px] md:h-full flex flex-col">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-bold flex items-center gap-1.5">
               Upcoming Sessions
