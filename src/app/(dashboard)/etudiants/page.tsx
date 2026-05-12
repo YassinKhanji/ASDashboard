@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Users, X, AlertTriangle, ArrowRight, Mail, Phone } from "lucide-react";
+import { Plus, Users, X, AlertTriangle, ArrowRight, Mail, Phone, Edit3, Trash2 } from "lucide-react";
 
 interface Student {
   id: string; firstName: string; lastName: string;
@@ -14,6 +14,7 @@ export default function EtudiantsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [form, setForm] = useState({ firstName: "", lastName: "", parentName: "", parentEmail: "", parentPhone: "", notes: "", flags: "" });
   const [saving, setSaving] = useState(false);
 
@@ -21,18 +22,60 @@ export default function EtudiantsPage() {
     fetch("/api/etudiants").then(r => r.json()).then(setStudents).finally(() => setLoading(false));
   }, []);
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("/api/etudiants", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-      if (res.ok) {
-        const student = await res.json();
-        setStudents(prev => [...prev, { ...student, _count: { enrollments: 0 } }]);
-        setShowModal(false);
-        setForm({ firstName: "", lastName: "", parentName: "", parentEmail: "", parentPhone: "", notes: "", flags: "" });
+      if (editingStudent) {
+        const res = await fetch(`/api/etudiants/${editingStudent.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form)
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setStudents(prev => prev.map(s => s.id === updated.id ? { ...updated, _count: s._count } : s));
+          setShowModal(false);
+        }
+      } else {
+        const res = await fetch("/api/etudiants", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+        if (res.ok) {
+          const student = await res.json();
+          setStudents(prev => [...prev, { ...student, _count: { enrollments: 0 } }]);
+          setShowModal(false);
+        }
       }
     } finally { setSaving(false); }
+  }
+
+  function openCreate() {
+    setEditingStudent(null);
+    setForm({ firstName: "", lastName: "", parentName: "", parentEmail: "", parentPhone: "", notes: "", flags: "" });
+    setShowModal(true);
+  }
+
+  function openEdit(s: Student) {
+    setEditingStudent(s);
+    setForm({
+      firstName: s.firstName,
+      lastName: s.lastName,
+      parentName: s.parentName || "",
+      parentEmail: s.parentEmail || "",
+      parentPhone: s.parentPhone || "",
+      notes: s.notes || "",
+      flags: s.flags || "",
+    });
+    setShowModal(true);
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/etudiants/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setStudents(prev => prev.filter(s => s.id !== id));
+      }
+    } catch (e) { console.error(e); }
   }
 
   return (
@@ -44,7 +87,7 @@ export default function EtudiantsPage() {
             {students.length} student{students.length !== 1 ? "s" : ""} in the directory
           </p>
         </div>
-        <button className="btn-glass btn-glass-primary" onClick={() => setShowModal(true)}>
+        <button className="btn-glass btn-glass-primary" onClick={openCreate}>
           <Plus size={18} strokeWidth={2.5} /> New student
         </button>
       </div>
@@ -60,7 +103,7 @@ export default function EtudiantsPage() {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">No students yet</h3>
           <p className="text-text-secondary mb-6">Add your first student to the directory.</p>
-          <button className="btn-glass btn-glass-primary" onClick={() => setShowModal(true)}>
+          <button className="btn-glass btn-glass-primary" onClick={openCreate}>
             <Plus size={18} /> Add student
           </button>
         </div>
@@ -77,6 +120,7 @@ export default function EtudiantsPage() {
                     <th className="px-6 py-4 label-subtle">Contact</th>
                     <th className="px-6 py-4 label-subtle">Projects</th>
                     <th className="px-6 py-4 label-subtle">Notes</th>
+                    <th className="px-6 py-4 label-subtle text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-glass-border/50">
@@ -104,6 +148,16 @@ export default function EtudiantsPage() {
                         )}
                         <span className="truncate" title={s.notes || ""}>{s.notes || "—"}</span>
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end items-center gap-1">
+                          <button onClick={() => openEdit(s)} className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors" title="Edit">
+                            <Edit3 size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(s.id, `${s.firstName} ${s.lastName}`)} className="p-2 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -126,6 +180,14 @@ export default function EtudiantsPage() {
                         </span>
                       )}
                     </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEdit(s)} className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors">
+                      <Edit3 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(s.id, `${s.firstName} ${s.lastName}`)} className="p-2 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -167,13 +229,15 @@ export default function EtudiantsPage() {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200" onClick={() => setShowModal(false)}>
           <div className="glass-card w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">New student</h3>
+              <h3 className="text-xl font-bold text-white">
+                {editingStudent ? "Edit student" : "New student"}
+              </h3>
               <button className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
             </div>
             
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1.5">First name <span className="text-accent-yellow">*</span></label>
@@ -213,7 +277,9 @@ export default function EtudiantsPage() {
               
               <div className="flex justify-end gap-3 pt-4 border-t border-glass-border mt-6">
                 <button type="button" className="btn-glass" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn-glass btn-glass-primary" disabled={saving}>{saving ? "Saving..." : "Add student"}</button>
+                <button type="submit" className="btn-glass btn-glass-primary" disabled={saving}>
+                  {saving ? "Saving..." : editingStudent ? "Save changes" : "Add student"}
+                </button>
               </div>
             </form>
           </div>
