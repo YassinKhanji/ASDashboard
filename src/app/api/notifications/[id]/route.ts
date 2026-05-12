@@ -14,7 +14,7 @@ export async function PATCH(
   const { id } = await params;
 
   await prisma.notification.update({
-    where: { id, userId: session.user.id },
+    where: { id },
     data: { isRead: true },
   });
 

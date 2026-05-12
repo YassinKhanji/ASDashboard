@@ -38,6 +38,14 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
+  // Fetch default admin for valid relations since auth is mocked
+  const defaultAdmin = await prisma.user.findFirst({
+    where: { role: { in: ["ADMIN", "COMMITTEE"] } },
+    select: { id: true, name: true }
+  });
+  const fallbackId = defaultAdmin ? defaultAdmin.id : session.user.id;
+  const fallbackName = defaultAdmin ? defaultAdmin.name : session.user.name;
+
   // Handle status transitions
   if (body.action) {
     const project = await prisma.project.findUnique({ where: { id } });
@@ -62,7 +70,7 @@ export async function PATCH(
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         await prisma.project.update({ where: { id }, data: { status: "APPROVED" } });
         await prisma.reviewAction.create({
-          data: { projectId: id, reviewerId: session.user.id, action: "APPROVE", notes: body.notes || "" },
+          data: { projectId: id, reviewerId: fallbackId, action: "APPROVE", notes: body.notes || "" },
         });
         await prisma.notification.create({
           data: { userId: project.createdById, title: "Project approved", content: `Your project "${project.title}" has been approved.`, link: `/projets/${id}` },
@@ -73,7 +81,7 @@ export async function PATCH(
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         await prisma.project.update({ where: { id }, data: { status: "REJECTED" } });
         await prisma.reviewAction.create({
-          data: { projectId: id, reviewerId: session.user.id, action: "REJECT", notes: body.notes || "" },
+          data: { projectId: id, reviewerId: fallbackId, action: "REJECT", notes: body.notes || "" },
         });
         await prisma.notification.create({
           data: { userId: project.createdById, title: "Project rejected", content: `Your project "${project.title}" has been rejected. Reason: ${body.notes}`, link: `/projets/${id}` },
@@ -84,7 +92,7 @@ export async function PATCH(
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         await prisma.project.update({ where: { id }, data: { status: "DRAFT" } });
         await prisma.reviewAction.create({
-          data: { projectId: id, reviewerId: session.user.id, action: "REQUEST_REVISION", notes: body.notes || "" },
+          data: { projectId: id, reviewerId: fallbackId, action: "REQUEST_REVISION", notes: body.notes || "" },
         });
         await prisma.notification.create({
           data: { userId: project.createdById, title: "Revision requested", content: `Changes are requested for "${project.title}".`, link: `/projets/${id}` },

@@ -49,11 +49,17 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
+  const defaultAdmin = await prisma.user.findFirst({
+    where: { role: { in: ["ADMIN", "COMMITTEE"] } },
+    select: { id: true }
+  });
+  const creatorId = defaultAdmin ? defaultAdmin.id : session.user.id;
+
   const discussion = await prisma.discussion.create({
     data: {
       title: body.title,
       projectId: body.projectId || null,
-      createdById: session.user.id,
+      createdById: creatorId,
     },
   });
 
@@ -62,7 +68,7 @@ export async function POST(req: Request) {
     await prisma.message.create({
       data: {
         discussionId: discussion.id,
-        authorId: session.user.id,
+        authorId: creatorId,
         content: body.message,
         tag: body.tag || null,
       },

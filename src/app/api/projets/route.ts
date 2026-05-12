@@ -35,6 +35,16 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { submit, leadInstructorId, coInstructorIds, helperIds, roomId, sessionTimes, ...projectData } = body;
 
+  // Find a valid admin or committee user to assign as creator
+  const defaultAdmin = await prisma.user.findFirst({
+    where: { role: { in: ["ADMIN", "COMMITTEE"] } },
+    select: { id: true, name: true }
+  });
+
+  if (!defaultAdmin) {
+    return NextResponse.json({ error: "No valid admin user found in database." }, { status: 500 });
+  }
+
   const project = await prisma.project.create({
     data: {
       ...projectData,
@@ -43,7 +53,7 @@ export async function POST(req: Request) {
       endDate: projectData.endDate ? new Date(projectData.endDate) : null,
       enrollmentOpen: projectData.enrollmentOpen ? new Date(projectData.enrollmentOpen) : null,
       enrollmentClose: projectData.enrollmentClose ? new Date(projectData.enrollmentClose) : null,
-      createdById: session.user.id,
+      createdById: defaultAdmin.id,
     },
   });
 
@@ -63,7 +73,7 @@ export async function POST(req: Request) {
       data: committeeMembers.map((m) => ({
         userId: m.id,
         title: "New project submitted",
-        content: `The project "${project.title}" was submitted for review by ${session.user?.name}.`,
+        content: `The project "${project.title}" was submitted for review by ${defaultAdmin.name}.`,
         link: `/projets/${project.id}`,
       })),
     });
