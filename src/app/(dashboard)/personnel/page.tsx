@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS } from "@/lib/permissions";
 import Link from "next/link";
 import { UserCog, Plus, Mail, Phone } from "lucide-react";
+import DeleteStaffButton from "@/components/ui/DeleteStaffButton";
 
 export const dynamic = "force-dynamic";
 
@@ -51,8 +52,10 @@ export default async function PersonnelPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-white truncate text-base leading-tight mb-1" title={member.name}>{member.name}</div>
-                  <span className="glass-badge badge-lime !px-2 !py-0.5 text-[10px]">{ROLE_LABELS[member.role]}</span>
+                  <span className="glass-badge badge-lime !px-2 !py-0.5 text-[10px]">{ROLE_LABELS[member.role as keyof typeof ROLE_LABELS] || member.role}</span>
                 </div>
+                {/* Delete Button */}
+                <DeleteStaffButton id={member.id} name={member.name} />
               </div>
 
               <div className="flex flex-col gap-2.5 text-xs text-text-secondary mb-6">
