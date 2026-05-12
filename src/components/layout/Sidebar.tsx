@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -52,6 +52,27 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   
+  const searchRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const bellButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileBellButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Close on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node) && 
+          bellButtonRef.current && !bellButtonRef.current.contains(event.target as Node) &&
+          mobileBellButtonRef.current && !mobileBellButtonRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearch(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
   // Fetch notifications
   useEffect(() => {
     fetch("/api/notifications")
@@ -99,6 +120,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         
         <div className="flex items-center gap-2">
           <button 
+            ref={mobileBellButtonRef}
             className="p-2 relative text-white/70 hover:text-white transition-colors"
             onClick={() => setShowNotifications(!showNotifications)}
           >
@@ -116,7 +138,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in">
+        <div ref={notificationsRef} className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in !bg-[#1a2f3a]">
           <div className="p-3 border-b border-white/10 font-bold text-sm text-white flex justify-between">
             Notifications
             {unreadCount > 0 && <span className="text-accent-cyan text-xs">{unreadCount} new</span>}
@@ -276,7 +298,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6 relative">
+        <div className="mb-6 relative" ref={searchRef}>
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
             <input
@@ -339,6 +361,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
           </div>
           
           <button 
+            ref={bellButtonRef}
             className="p-2 relative text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
             onClick={() => setShowNotifications(!showNotifications)}
           >
@@ -348,7 +371,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute bottom-[calc(100%+10px)] left-0 w-[300px] glass-card p-0 overflow-hidden z-50">
+            <div ref={notificationsRef} className="absolute bottom-[calc(100%+10px)] left-0 w-[300px] glass-card p-0 overflow-hidden z-50 !bg-[#1a2f3a]">
               <div className="p-3 border-b border-white/10 font-bold text-sm text-white flex justify-between">
                 Notifications
                 {unreadCount > 0 && <span className="text-accent-cyan text-xs">{unreadCount} new</span>}
