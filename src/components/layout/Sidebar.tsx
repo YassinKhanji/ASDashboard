@@ -42,23 +42,27 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile Drawer Navigation */}
-      <div className={`fixed inset-0 z-[100] md:hidden transition-opacity duration-300 ${isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
-        <aside className={`absolute top-0 left-0 bottom-0 w-72 bg-[#1a2f3a]/95 border-r border-white/10 backdrop-blur-2xl transition-transform duration-300 ease-out shadow-2xl flex flex-col ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          <div className="p-6 flex items-center justify-between border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-white font-bold text-lg">Avenir Souriant</span>
-            </div>
-            <button onClick={() => setIsMenuOpen(false)} className="p-2 -mr-2 text-white/50 hover:text-white touch-target">
-              <X size={24} />
-            </button>
+      {/* Mobile Top Bar */}
+      <header className="fixed top-0 left-0 right-0 h-16 px-6 bg-white/10 backdrop-blur-2xl border-b border-white/20 z-50 flex md:hidden items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          
-          <nav className="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
+          <span className="text-white font-bold text-sm">Avenir Souriant</span>
+        </div>
+        
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="p-2 text-white/70 hover:text-white transition-colors"
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </header>
+
+      {/* Mobile Dropdown Menu */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 top-16 bg-black/60 backdrop-blur-md z-40 md:hidden animate-in fade-in slide-in-from-top-4">
+          <nav className="bg-white/10 border-b border-white/20 p-4 flex flex-col gap-2">
             {navItems.map((item, index) => {
               const active = isActive(item.href);
               return (
@@ -66,50 +70,20 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                   key={index}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center gap-4 px-5 min-h-[52px] rounded-2xl transition-all active:scale-95 ${
+                  className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${
                     active 
-                      ? "bg-accent-cyan text-black font-bold shadow-[0_0_20px_rgba(77,184,255,0.3)]" 
+                      ? "bg-white/20 text-white shadow-inner" 
                       : "text-white/60 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <item.icon size={22} strokeWidth={active ? 2.5 : 2} />
-                  <span className="text-base">{item.label}</span>
+                  <item.icon size={20} strokeWidth={active ? 2.5 : 2} />
+                  <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
-          
-          <div className="p-6 border-t border-white/10 bg-black/20">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-cyan to-blue-600 flex items-center justify-center font-bold text-white shadow-lg border border-white/20">
-                {user?.name ? user.name.substring(0,2).toUpperCase() : "AS"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-white font-bold truncate text-sm">{user?.name || "Admin"}</div>
-                <div className="text-white/40 text-[10px] uppercase font-bold tracking-widest truncate">{user?.role || "Gérant"}</div>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* Mobile Top Bar */}
-      <header className="fixed top-0 left-0 right-0 h-16 px-4 bg-[#1a2f3a]/80 backdrop-blur-xl border-b border-white/10 z-[90] flex md:hidden items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
-          </div>
-          <span className="text-white font-bold text-sm tracking-tight">Avenir Souriant</span>
         </div>
-        
-        <button 
-          onClick={() => setIsMenuOpen(true)}
-          className="w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-          aria-label="Open menu"
-        >
-          <Menu size={26} />
-        </button>
-      </header>
+      )}
 
       {/* Desktop Sidebar */}
       <aside className="
