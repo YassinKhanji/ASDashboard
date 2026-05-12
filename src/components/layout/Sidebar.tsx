@@ -114,6 +114,27 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         </div>
       </header>
 
+      {/* Mobile Notifications Dropdown */}
+      {showNotifications && (
+        <div className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in">
+          <div className="p-3 border-b border-white/10 font-bold text-sm text-white flex justify-between">
+            Notifications
+            {unreadCount > 0 && <span className="text-accent-cyan text-xs">{unreadCount} new</span>}
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-4 text-center text-xs text-white/50">No notif</div>
+            ) : (
+              notifications.map(n => (
+                <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-3 text-sm border-b border-white/5 cursor-pointer ${n.isRead ? 'text-white/70 hover:bg-white/5' : 'bg-accent-cyan/10 text-white font-medium'}`}>
+                  {n.title}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Mobile Dropdown Menu */}
       {isMenuOpen && (
         <div className="fixed inset-0 top-16 z-40 md:hidden animate-in fade-in" onClick={() => setIsMenuOpen(false)}>
@@ -334,7 +355,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-white/50">No notifications</div>
+                  <div className="p-4 text-center text-xs text-white/50">No notif</div>
                 ) : (
                   notifications.map(n => (
                     <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-3 text-sm border-b border-white/5 cursor-pointer ${n.isRead ? 'text-white/70 hover:bg-white/5' : 'bg-accent-cyan/10 text-white font-medium'}`}>
