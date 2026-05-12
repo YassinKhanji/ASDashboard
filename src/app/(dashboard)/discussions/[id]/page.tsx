@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, Edit3, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Send, Edit3, Trash2, Check, X, MessageSquare } from "lucide-react";
 import { formatDateTime, MESSAGE_TAG_LABELS, getInitials } from "@/lib/utils";
-import { useSession } from "@/lib/auth-client";
 
 interface Message {
   id: string;
@@ -33,7 +32,9 @@ const TAG_BADGE_MAP: Record<string, string> = {
 
 export default function DiscussionDetailPage() {
   const { id } = useParams();
-  const { data: session } = useSession();
+  const router = useRouter();
+  // Mock auth — matches the pattern in @/lib/auth.ts
+  const session = { user: { id: "admin-id", name: "Admin" } };
   const [discussion, setDiscussion] = useState<DiscussionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -42,7 +43,6 @@ export default function DiscussionDetailPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     fetch(`/api/discussions/${id}`)
