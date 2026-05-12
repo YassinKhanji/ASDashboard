@@ -9,7 +9,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
   const pendingPercent = stats.projectCount > 0 ? Math.round((stats.pendingReviewCount / stats.projectCount) * 100) : 0;
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-500">
+    <div className="w-full h-auto md:h-full flex flex-col animate-in fade-in duration-500">
       
       {/* Header */}
       <header className="flex justify-between items-center mb-4 shrink-0">
@@ -19,16 +19,16 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
         <div className="flex items-center gap-3">
           <button className="text-white/60 hover:text-white transition-colors bg-white/5 p-2 rounded-full border border-white/10">
-            <Bell size={16} />
+            < Bell size={16} />
           </button>
         </div>
       </header>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-none md:flex-1 min-h-0">
         
         {/* Left Column (Activity) */}
-        <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[200px] md:h-full">
+        <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
             <h2 className="text-sm font-bold">Enrollments (Activity)</h2>
             <button className="text-[10px] text-white/60 flex items-center gap-1 hover:text-white">
@@ -62,8 +62,8 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
 
         {/* Middle Column (Small stats) */}
-        <div className="col-span-1 md:col-span-3 flex flex-col gap-3 h-full min-h-[180px] md:min-h-0">
-          <div className="flex-1 bg-white/5 rounded-[24px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
+        <div className="col-span-1 md:col-span-3 flex flex-col gap-3 h-auto md:h-full">
+          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <Users size={16} className="text-[#4db8ff]" />
             </div>
@@ -72,7 +72,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
               <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">Students</div>
             </div>
           </div>
-          <div className="flex-1 bg-white/5 rounded-[24px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
+          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <UserCog size={16} className="text-[#f5c518]" />
             </div>
@@ -81,7 +81,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
               <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">Staff</div>
             </div>
           </div>
-          <div className="flex-1 bg-white/5 rounded-[24px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
+          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <ClipboardCheck size={16} className="text-[#a8e063]" />
             </div>
@@ -93,7 +93,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
         </div>
 
         {/* Right Column (Overview) */}
-        <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-[200px] md:h-full flex flex-col">
+        <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-[220px] md:h-full flex flex-col">
           <div className="flex justify-between items-center mb-2 shrink-0">
             <h2 className="text-sm font-bold">Project Breakdown</h2>
             <div className="text-[10px] text-white/60 font-bold">{stats.projectCount} Total</div>
