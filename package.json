@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "start": "next start -p 3001",
     "lint": "eslint",
     "db:push": "npx prisma db push",
@@ -25,7 +25,6 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
