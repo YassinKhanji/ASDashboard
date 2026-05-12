@@ -1,0 +1,56 @@
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
+
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json([], { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const projectId = searchParams.get("projectId");
+
+  const discussions = await prisma.discussion.findMany({
+    where: projectId ? { projectId } : { projectId: null },
+    orderBy: { createdAt: "desc" },
+    include: {
+      createdBy: { select: { name: true } },
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { author: { select: { name: true } } },
+      },
+      _count: { select: { messages: true } },
+    },
+  });
+
+  return NextResponse.json(discussions);
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+
+  const discussion = await prisma.discussion.create({
+    data: {
+      title: body.title,
+      projectId: body.projectId || null,
+      createdById: session.user.id,
+    },
+  });
+
+  // Create the first message if provided
+  if (body.message) {
+    await prisma.message.create({
+      data: {
+        discussionId: discussion.id,
+        authorId: session.user.id,
+        content: body.message,
+        tag: body.tag || null,
+      },
+    });
+  }
+
+  return NextResponse.json(discussion, { status: 201 });
+}

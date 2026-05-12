@@ -1,0 +1,541 @@
+# Avenir Souriant — Internal Management Web App
+
+Internal web app to centralize project management, student/staff tracking, scheduling, discussions, and governance for a Montréal-based Arabic language and cultural learning centre.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **You will need a database.** This app manages relational data (students enrolled in projects, staff assigned to sessions, approval workflows with audit logs, etc.). A flat file or localStorage approach would collapse under the complexity. PostgreSQL is recommended — it's free, robust, and handles relational data well.
+
+> [!IMPORTANT]
+> **Hosting decision needed.** The app needs to be hosted somewhere accessible by your staff. Options:
+> - **Vercel + Supabase** (free tier, easiest to deploy, PostgreSQL included) ← Recommended
+> - **Railway / Render** (cheap, simple, PostgreSQL included)
+> - **Self-hosted** (your own server or VPS — more control, more maintenance)
+>
+> This affects how we configure the database and deployment. Please confirm your preference.
+
+## Open Questions
+
+1. **How many rooms** does the centre have? (Affects calendar seed data)
+2. **How many committee members** typically review a project? (Affects the approval workflow — do all need to approve, or is majority sufficient?)
+3. **Do you want email notifications** (e.g., when a project is submitted for review), or are in-app notifications sufficient for v1?
+4. **Do you already have a domain name** for this app, or will you use a generated URL (e.g., `asc-admin.vercel.app`)?
+5. **Do you want the initial admin account seeded automatically**, or do you want a setup wizard on first launch?
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Why |
+|---|---|---|
+| **Framework** | Next.js 15 (App Router) | Full-stack React — handles both UI and API routes in one project. No separate backend to maintain. |
+| **Language** | TypeScript | Catches bugs early, great IDE support. |
+| **Database** | PostgreSQL | Relational data (students → projects → sessions → rooms). Free tier on Supabase/Railway. |
+| **ORM** | Prisma | Type-safe database queries, easy migrations, visual schema. |
+| **Auth** | NextAuth.js (Auth.js v5) | Built-in session management, role-based access, credential-based login. |
+| **Styling** | Vanilla CSS + CSS Modules | Clean, no extra dependencies. Print stylesheets are easy to control. |
+| **Calendar** | Custom-built (CSS Grid) | The multi-room/filter requirements are specific enough that a library would fight us more than help. |
+| **Icons** | Lucide React | Lightweight, consistent icon set. |
+| **Deployment** | Vercel (pending your choice) | Zero-config for Next.js. |
+
+> [!NOTE]
+> This is intentionally **not** over-engineered. No Redux, no GraphQL, no microservices, no Docker. One Next.js project, one database, deployed to one place.
+
+---
+
+## Database Schema
+
+```mermaid
+erDiagram
+    User {
+        uuid id PK
+        string name
+        string email UK
+        string passwordHash
+        enum role "ADMIN | COMMITTEE | INSTRUCTOR"
+        string phone
+        jsonb availability
+        timestamp createdAt
+    }
+
+    Project {
+        uuid id PK
+        string title
+        text description
+        enum type "WORKSHOP | COURSE | ACTIVITY"
+        string targetAgeGroup
+        string language
+        enum status "DRAFT | SUBMITTED | UNDER_REVIEW | APPROVED | REJECTED | ACTIVE | COMPLETED | ARCHIVED"
+        decimal registrationFee
+        decimal projectedCosts
+        decimal revenueEstimate
+        decimal actualCosts
+        decimal actualRevenue
+        text publicDescription
+        text promoNotes
+        date enrollmentOpenDate
+        date enrollmentCloseDate
+        int maxCapacity
+        uuid createdById FK
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    ProjectStaff {
+        uuid id PK
+        uuid projectId FK
+        uuid userId FK
+        enum role "LEAD | CO_INSTRUCTOR | HELPER"
+    }
+
+    Session {
+        uuid id PK
+        uuid projectId FK
+        uuid roomId FK
+        datetime startTime
+        datetime endTime
+        boolean isCancelled
+        text notes
+    }
+
+    Room {
+        uuid id PK
+        string name
+        int capacity
+        string color
+    }
+
+    Student {
+        uuid id PK
+        string firstName
+        string lastName
+        date dateOfBirth
+        string parentName
+        string parentEmail
+        string parentPhone
+        text notes
+        text flags
+        timestamp createdAt
+    }
+
+    Enrollment {
+        uuid id PK
+        uuid studentId FK
+        uuid projectId FK
+        enum status "CONFIRMED | WAITLIST | CANCELLED"
+        timestamp enrolledAt
+    }
+
+    Attendance {
+        uuid id PK
+        uuid studentId FK
+        uuid sessionId FK
+        enum status "PRESENT | ABSENT | LATE | EXCUSED"
+    }
+
+    ReviewAction {
+        uuid id PK
+        uuid projectId FK
+        uuid reviewerId FK
+        enum action "APPROVE | REJECT | REQUEST_REVISION"
+        text notes
+        timestamp createdAt
+    }
+
+    Discussion {
+        uuid id PK
+        uuid projectId FK "nullable - null means general"
+        string title
+        timestamp createdAt
+        uuid createdById FK
+    }
+
+    Message {
+        uuid id PK
+        uuid discussionId FK
+        uuid authorId FK
+        text content
+        enum tag "QUESTION | FEEDBACK | DECISION | ACTION_ITEM"
+        timestamp createdAt
+    }
+
+    Notification {
+        uuid id PK
+        uuid userId FK
+        string title
+        text content
+        string link
+        boolean isRead
+        timestamp createdAt
+    }
+
+    User ||--o{ Project : "creates"
+    User ||--o{ ProjectStaff : "assigned to"
+    Project ||--o{ ProjectStaff : "has staff"
+    Project ||--o{ Session : "has sessions"
+    Room ||--o{ Session : "hosts"
+    Student ||--o{ Enrollment : "enrolls"
+    Project ||--o{ Enrollment : "has enrollments"
+    Student ||--o{ Attendance : "attendance"
+    Session ||--o{ Attendance : "tracks"
+    Project ||--o{ ReviewAction : "reviewed"
+    User ||--o{ ReviewAction : "reviews"
+    Project ||--o{ Discussion : "has discussions"
+    Discussion ||--o{ Message : "contains"
+    User ||--o{ Message : "writes"
+    User ||--o{ Notification : "receives"
+```
+
+---
+
+## Proposed Changes
+
+### Project Structure
+
+```
+avenir-souriant-app/
+├── prisma/
+│   ├── schema.prisma          # Database schema
+│   └── seed.ts                # Seed data (rooms, admin account)
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── (auth)/
+│   │   │   └── login/
+│   │   │       └── page.tsx   # Login page
+│   │   ├── (dashboard)/       # Layout group — all authenticated pages
+│   │   │   ├── layout.tsx     # Sidebar + header layout
+│   │   │   ├── page.tsx       # Dashboard home
+│   │   │   ├── projets/       # Project management
+│   │   │   │   ├── page.tsx           # Project list
+│   │   │   │   ├── nouveau/page.tsx   # New project form (multi-step)
+│   │   │   │   └── [id]/
+│   │   │   │       ├── page.tsx       # Project detail view
+│   │   │   │       ├── modifier/page.tsx  # Edit project
+│   │   │   │       └── discussion/page.tsx
+│   │   │   ├── etudiants/     # Student management
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── [id]/page.tsx
+│   │   │   ├── personnel/     # Staff management
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── [id]/page.tsx
+│   │   │   ├── calendrier/    # Calendar system
+│   │   │   │   └── page.tsx
+│   │   │   ├── discussions/   # General discussions
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── [id]/page.tsx
+│   │   │   ├── revue/         # Governance / Review queue
+│   │   │   │   └── page.tsx
+│   │   │   └── parametres/    # Settings (Admin only)
+│   │   │       └── page.tsx
+│   │   ├── api/               # API routes
+│   │   │   ├── auth/[...nextauth]/route.ts
+│   │   │   ├── projets/
+│   │   │   ├── etudiants/
+│   │   │   ├── personnel/
+│   │   │   ├── sessions/
+│   │   │   ├── discussions/
+│   │   │   ├── revue/
+│   │   │   └── notifications/
+│   │   └── globals.css
+│   ├── components/
+│   │   ├── ui/                # Reusable UI primitives
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Select.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Table.tsx
+│   │   │   └── StatusBadge.tsx
+│   │   ├── layout/
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── MobileNav.tsx
+│   │   ├── calendar/
+│   │   │   ├── CalendarGrid.tsx
+│   │   │   ├── DayView.tsx
+│   │   │   ├── WeekView.tsx
+│   │   │   ├── MonthView.tsx
+│   │   │   └── PrintableCalendar.tsx
+│   │   ├── projects/
+│   │   │   ├── ProjectForm.tsx        # Multi-step form
+│   │   │   ├── ProjectCard.tsx
+│   │   │   ├── StatusTimeline.tsx
+│   │   │   └── BudgetTracker.tsx
+│   │   └── discussions/
+│   │       ├── ThreadList.tsx
+│   │       └── MessageComposer.tsx
+│   ├── lib/
+│   │   ├── prisma.ts          # Prisma client singleton
+│   │   ├── auth.ts            # NextAuth config
+│   │   ├── permissions.ts     # Role-based access helpers
+│   │   └── utils.ts           # Date formatting, currency, etc.
+│   └── styles/
+│       ├── print.css          # Print-specific styles
+│       └── calendar.module.css
+├── public/
+│   └── logo.png               # ASC logo
+├── .env.local                 # Database URL, auth secret
+├── next.config.ts
+├── package.json
+└── tsconfig.json
+```
+
+---
+
+### Phase 1 — Foundation & Auth
+
+#### [NEW] `prisma/schema.prisma`
+- Full database schema as shown in the ER diagram above
+- All models, enums, and relations
+
+#### [NEW] `prisma/seed.ts`
+- Seeds the database with: rooms, an initial admin account, sample data for testing
+
+#### [NEW] `src/lib/prisma.ts`
+- Prisma client singleton (prevents connection exhaustion in dev)
+
+#### [NEW] `src/lib/auth.ts`
+- NextAuth.js configuration with credentials provider
+- Session includes user role for RBAC
+- Password hashing with bcrypt
+
+#### [NEW] `src/lib/permissions.ts`
+- Helper functions: `canReviewProjects(role)`, `canManageUsers(role)`, `canSubmitProjects(role)`
+- Middleware-style route protection
+
+#### [NEW] `src/app/(auth)/login/page.tsx`
+- Clean login page with ASC logo
+- Email + password form
+- Redirects to dashboard on success
+
+#### [NEW] `src/app/globals.css`
+- CSS custom properties (design tokens): colors, spacing, typography, shadows
+- Base reset and typography (using Inter from Google Fonts)
+- French-language-friendly typography settings
+- Print stylesheet (`@media print`) that hides sidebar, navigation, and non-essential UI
+
+#### [NEW] `src/app/(dashboard)/layout.tsx`
+- Authenticated layout wrapper
+- Sidebar navigation (French labels): Tableau de bord, Projets, Étudiants, Personnel, Calendrier, Discussions, Revue, Paramètres
+- Top header with user info, notifications bell, logout
+- Mobile-responsive: sidebar collapses to hamburger menu
+
+---
+
+### Phase 2 — Project Management (Core Module)
+
+#### [NEW] `src/app/(dashboard)/page.tsx` — Dashboard Home
+- Role-aware dashboard:
+  - **Admin/Committee**: Review queue summary, upcoming sessions, recent discussions
+  - **Instructor**: My projects, my upcoming sessions, notifications
+- Quick stats cards: active projects, enrolled students, pending reviews
+
+#### [NEW] `src/app/(dashboard)/projets/page.tsx` — Project List
+- Filterable/searchable table of all projects
+- Status filter (Draft, Active, Under Review, etc.)
+- Type filter (Workshop, Course, Activity)
+- Each row shows: title, type, status badge, lead instructor, dates, enrollment count
+
+#### [NEW] `src/app/(dashboard)/projets/nouveau/page.tsx` — New Project Form
+- **Multi-step form** (not one massive page):
+  1. **Informations de base**: Title, description, type, age group, language
+  2. **Horaire**: Start/end dates, recurring sessions, room assignment (with conflict check)
+  3. **Équipe**: Assign lead, co-instructors, helpers (from staff list, with conflict detection)
+  4. **Budget**: Registration fee, projected costs, revenue estimate
+  5. **Marketing**: Public description, promo notes, enrollment dates, capacity
+  6. **Révision**: Summary of all fields before submission
+- Save as Draft at any step, or Submit for Review at the end
+
+#### [NEW] `src/app/(dashboard)/projets/[id]/page.tsx` — Project Detail
+- Full project view with all info organized in tabs or sections
+- Status timeline showing lifecycle progression
+- Budget tracker: projected vs. actual (bar chart, simple CSS — no chart library)
+- Enrolled students list with enrollment status
+- Assigned staff list
+- Session schedule
+- Discussion thread (project-specific)
+- Action buttons based on role and status:
+  - Instructor: Edit (if Draft), Submit for Review
+  - Committee: Approve / Reject / Request Revision
+  - Admin: All of the above + Archive / Delete
+
+#### [NEW] `src/app/api/projets/route.ts` + `[id]/route.ts`
+- CRUD endpoints for projects
+- Status transition validation (e.g., can't go from Draft → Active without approval)
+- Conflict detection on session/room assignment
+
+---
+
+### Phase 3 — Students & Staff
+
+#### [NEW] `src/app/(dashboard)/etudiants/page.tsx` — Student List
+- Searchable table: name, age, enrolled projects count, contact info
+- Add new student button → modal or page
+
+#### [NEW] `src/app/(dashboard)/etudiants/[id]/page.tsx` — Student Detail
+- Profile info, parent/guardian contact
+- Enrolled projects with status (confirmed, waitlist, cancelled)
+- Attendance history across all sessions
+- Notes/flags section (allergies, accommodations)
+
+#### [NEW] `src/app/(dashboard)/personnel/page.tsx` — Staff List
+- All staff with roles, assigned projects, availability
+- Conflict indicator if double-booked
+
+#### [NEW] `src/app/(dashboard)/personnel/[id]/page.tsx` — Staff Detail
+- Profile, roles, contact info
+- Assigned projects (with role in each)
+- Schedule overview (their sessions on a mini-calendar)
+- Availability editor
+
+#### [NEW] API routes for students and staff
+- CRUD for students, enrollment management
+- CRUD for staff profiles
+- Conflict detection endpoint for staff scheduling
+
+---
+
+### Phase 4 — Calendar System
+
+#### [NEW] `src/app/(dashboard)/calendrier/page.tsx`
+- **Three views**: Day, Week, Month (toggle buttons)
+- **Filters**: Room, instructor, project, date range
+- **Room view**: Columns = rooms, rows = time slots (like Google Calendar's "resource" view)
+- Color-coded by project (each project gets a consistent color)
+- Click a session → modal with details + link to project
+- Conflict detection: visual warning if two sessions overlap in the same room
+
+#### [NEW] `src/components/calendar/` — Calendar Components
+- `CalendarGrid.tsx`: Base grid layout using CSS Grid
+- `DayView.tsx`: Single day, all rooms as columns
+- `WeekView.tsx`: 7-day view, filterable
+- `MonthView.tsx`: Traditional month grid with session dots
+- `PrintableCalendar.tsx`: Clean, minimal layout optimized for `@media print`
+
+#### Print Layouts
+- **Weekly schedule**: Clean grid, black-and-white friendly, room labels
+- **Room-by-room daily**: One page per room showing the day's schedule
+- **Instructor schedule**: One page per instructor showing their day
+- All triggered via a "Imprimer" (Print) button that applies print CSS and calls `window.print()`
+
+---
+
+### Phase 5 — Discussions & Notifications
+
+#### [NEW] `src/app/(dashboard)/discussions/page.tsx` — Discussion List
+- General (non-project) discussions
+- Project-specific discussions linked from each project page
+- Each thread shows: title, last message preview, unread count, tags used
+
+#### [NEW] `src/app/(dashboard)/discussions/[id]/page.tsx` — Discussion Thread
+- Chronological message list
+- Each message shows: author, timestamp, content, tag badge (Question / Feedback / Decision / Action Item)
+- Compose box at the bottom with tag selector
+
+#### [NEW] Notification System
+- `src/app/api/notifications/route.ts` — Fetch/mark-read endpoints
+- Bell icon in header with unread count badge
+- Notification dropdown: list of recent notifications with links
+- Triggered by: new discussion message in your threads, project status change, new project submitted for review
+
+---
+
+### Phase 6 — Governance & Approvals
+
+#### [NEW] `src/app/(dashboard)/revue/page.tsx` — Review Queue
+- Committee-only view (redirects instructors away)
+- Table of all projects with status `SUBMITTED` or `UNDER_REVIEW`
+- Each row: project title, submitted by, submitted date, type, action buttons
+- Click → goes to project detail page with review form
+
+#### Review Form (within Project Detail page)
+- Structured form: Approve / Reject / Request Revision (radio)
+- Mandatory text field for notes/reasoning
+- Submit creates a `ReviewAction` record with timestamp and reviewer name
+- Updates project status accordingly
+- Notifies the project creator
+
+#### Audit Log
+- Visible on each project detail page under a "Historique" tab
+- Chronological list of all `ReviewAction` entries
+- Shows: action, reviewer name, notes, timestamp
+
+---
+
+### Phase 7 — Settings & Admin
+
+#### [NEW] `src/app/(dashboard)/parametres/page.tsx`
+- **Admin only**
+- User management: create/edit/deactivate user accounts, assign roles
+- Room management: add/edit/remove rooms
+- System settings: centre name, default language, etc.
+
+---
+
+## UI/UX Design Principles
+
+| Principle | Implementation |
+|---|---|
+| **French UI** | All labels, buttons, navigation, status badges, form fields in French. Data entered by users can be in any language. |
+| **Clean & professional** | Muted color palette (navy, soft gray, white) with ASC brand accent. No visual clutter. |
+| **Mobile-friendly** | Responsive sidebar → bottom nav on mobile. Tables become card lists on small screens. Calendar adapts to single-column on mobile. |
+| **Non-technical staff** | Large click targets, clear labels, confirmation dialogs on destructive actions, inline help text on forms. |
+| **Print-ready** | Dedicated `@media print` styles. Print buttons on calendar and schedule views. No sidebars/headers in print output. |
+
+### Color Palette (Derived from ASC Branding)
+
+| Token | Usage | Value |
+|---|---|---|
+| `--primary` | Buttons, active nav, links | Brand blue from ASC logo |
+| `--primary-light` | Hover states, light backgrounds | Lighter variant |
+| `--surface` | Cards, modals | `#ffffff` |
+| `--background` | Page background | `#f5f6fa` |
+| `--text` | Body text | `#1a1a2e` |
+| `--text-muted` | Secondary text | `#6b7280` |
+| `--success` | Approved, confirmed | `#059669` |
+| `--warning` | Under review, waitlist | `#d97706` |
+| `--danger` | Rejected, cancelled | `#dc2626` |
+| `--border` | Dividers, input borders | `#e5e7eb` |
+
+---
+
+## Build Order & Estimated Effort
+
+| Phase | What | Est. Effort |
+|---|---|---|
+| **1** | Project setup, database, auth, layout, login page | Foundation |
+| **2** | Project CRUD, multi-step form, status lifecycle, approval workflow | Core — largest module |
+| **3** | Student & staff CRUD, enrollment, attendance, conflict detection | Moderate |
+| **4** | Calendar views (day/week/month), room view, filters, print layouts | Moderate-complex |
+| **5** | Discussions, messages, tagging, notifications | Moderate |
+| **6** | Review queue dashboard, audit log, role-based views | Light (uses Phase 2 data) |
+| **7** | Admin settings, user management | Light |
+
+I will build these phases **sequentially**, each one fully functional before moving to the next.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- After each phase: run `npm run build` to verify no TypeScript or build errors
+- Run `npx prisma db push` to verify schema validity
+- Test API routes manually via the browser
+
+### Manual Verification
+- After each phase, I'll launch the dev server and use the browser tool to:
+  - Verify the UI renders correctly
+  - Test form submissions
+  - Verify role-based access (login as different roles)
+  - Test print layouts
+  - Verify mobile responsiveness
+
+### Browser Testing
+- Navigate through each module as Admin, Committee, and Instructor roles
+- Submit a project through the full lifecycle (Draft → Submit → Review → Approve → Active → Complete)
+- Test calendar conflict detection
+- Test print output for calendar views

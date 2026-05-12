@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #1a2f3a;
+  --color-glass-surface: rgba(255, 255, 255, 0.1);
+  --color-glass-surface-hover: rgba(255, 255, 255, 0.15);
+  --color-glass-border: rgba(255, 255, 255, 0.2);
+  --color-accent-yellow: #f5c518;
+  --color-accent-cyan: #4db8ff;
+  --color-accent-lime: #a8e063;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.6);
+
+  --font-sans: "Inter", sans-serif;
+  
+  --radius-3xl: 24px;
+  
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  
+  --spacing-card: 24px;
+  --spacing-gap-card: 16px;
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* Generic glass card component */
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 2rem; /* 4xl to match home page */
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .glass-card-hover {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  
+  .glass-card-hover:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Badge/Pill style */
+  .glass-badge {
+    border-radius: 9999px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* Status Colors for Badges */
+  .badge-lime {
+    background-color: rgba(168, 224, 99, 0.2);
+    color: var(--accent-lime);
+    border-color: rgba(168, 224, 99, 0.3);
+  }
+  .badge-yellow {
+    background-color: rgba(245, 197, 24, 0.2);
+    color: var(--accent-yellow);
+    border-color: rgba(245, 197, 24, 0.3);
+  }
+  .badge-cyan {
+    background-color: rgba(77, 184, 255, 0.2);
+    color: var(--accent-cyan);
+    border-color: rgba(77, 184, 255, 0.3);
+  }
+  .badge-white {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Typography */
+  .metric-hero {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+  }
+  .header-hero {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.025em;
+  }
+  .label-subtle {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Button Overrides */
+  .btn-glass {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.15);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: #ffffff;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  .btn-glass:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .btn-glass-primary {
+    background-color: rgba(77, 184, 255, 0.2);
+    color: var(--accent-cyan);
+    border-color: rgba(77, 184, 255, 0.3);
+  }
+  .btn-glass-primary:hover {
+    background-color: rgba(77, 184, 255, 0.3);
+  }
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

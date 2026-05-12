@@ -1,0 +1,41 @@
+{
+  "name": "avenir-souriant-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint",
+    "db:push": "npx prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma generate"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "bcryptjs": "^3.0.2",
+    "lucide-react": "^0.513.0",
+    "next": "16.2.6",
+    "next-auth": "5.0.0-beta.30",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "postcss": "^8.5.14",
+    "prisma": "^6.9.0",
+    "tailwindcss": "^4.3.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5"
+  }
+}

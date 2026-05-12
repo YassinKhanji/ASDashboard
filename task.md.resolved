@@ -1,0 +1,55 @@
+# Avenir Souriant — Build Progress
+
+## Phase 1 — Foundation & Auth
+- [/] Initialize Next.js project with TypeScript
+- [ ] Set up Prisma schema (all models, enums, relations)
+- [ ] Create Prisma client singleton
+- [ ] Set up NextAuth.js with credentials provider + RBAC
+- [ ] Create global CSS design system (tokens, reset, typography, print styles)
+- [ ] Build layout: Sidebar, Header, MobileNav
+- [ ] Build login page
+- [ ] Create reusable UI components (Button, Input, Badge, Card, Modal, Table, Select, StatusBadge)
+- [ ] Seed script (admin account, sample rooms)
+- [ ] Verify Phase 1: build + dev server + login flow
+
+## Phase 2 — Project Management
+- [ ] Project list page with filters
+- [ ] Multi-step new project form
+- [ ] Project detail page (tabs: info, budget, team, sessions, discussion, history)
+- [ ] Project API routes (CRUD + status transitions)
+- [ ] Status lifecycle & approval workflow
+- [ ] Budget tracker component
+
+## Phase 3 — Students & Staff
+- [ ] Student list + detail pages
+- [ ] Enrollment management (confirm, waitlist, cancel)
+- [ ] Attendance tracking per session
+- [ ] Staff list + detail pages
+- [ ] Conflict detection for staff scheduling
+- [ ] API routes for students & staff
+
+## Phase 4 — Calendar System
+- [ ] Day / Week / Month views
+- [ ] Room view (columns = rooms)
+- [ ] Filters (room, instructor, project, date range)
+- [ ] Conflict detection (visual + API)
+- [ ] Printable calendar layouts (weekly, room-by-room, instructor)
+- [ ] Print button + @media print styles
+
+## Phase 5 — Discussions & Notifications
+- [ ] General discussion list + thread pages
+- [ ] Project-specific discussion threads
+- [ ] Message tagging (Question / Feedback / Decision / Action Item)
+- [ ] Notification system (bell icon, dropdown, mark-read)
+- [ ] API routes
+
+## Phase 6 — Governance & Approvals
+- [ ] Review queue dashboard (committee view)
+- [ ] Structured review form (approve/reject/request revision)
+- [ ] Audit log on project detail page
+- [ ] Role-based view restrictions
+
+## Phase 7 — Settings & Admin
+- [ ] User management (create/edit/deactivate accounts)
+- [ ] Room management
+- [ ] System settings
