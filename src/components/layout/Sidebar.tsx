@@ -51,6 +51,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState(0);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -73,11 +74,19 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   
-  // Fetch notifications
+  // Fetch notifications & pending reviews
   useEffect(() => {
     fetch("/api/notifications")
       .then(res => res.json())
       .then(setNotifications)
+      .catch(() => {});
+      
+    fetch("/api/projets")
+      .then(res => res.json())
+      .then(data => {
+        const pending = data.filter((p: any) => p.status === "SUBMITTED").length;
+        setPendingReviews(pending);
+      })
       .catch(() => {});
   }, []);
 
@@ -138,19 +147,36 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={notificationsRef} className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in !bg-[#1a2f3a]">
-          <div className="p-3 border-b border-white/10 font-bold text-sm text-white flex justify-between">
-            Notifications
-            {unreadCount > 0 && <span className="text-accent-cyan text-xs">{unreadCount} new</span>}
+        <div ref={notificationsRef} className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in !bg-[#1a2f3a]/80 backdrop-blur-xl border border-white/20 shadow-2xl">
+          <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5">
+            <div className="flex items-center gap-2">
+              <Bell size={16} className="text-accent-cyan" />
+              <span>Notifications</span>
+            </div>
+            {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2 !py-0.5 !text-[10px]">{unreadCount} new</span>}
           </div>
-          <div className="max-h-[300px] overflow-y-auto">
+          <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
             {notifications.length === 0 ? (
-              <div className="p-4 text-center text-xs text-white/50">No notif</div>
+              <div className="p-8 text-center flex flex-col items-center gap-2">
+                <Bell size={32} className="text-white/10" />
+                <div className="text-xs text-white/30">No notifications yet</div>
+              </div>
             ) : (
               notifications.map(n => (
-                <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-3 text-sm border-b border-white/5 cursor-pointer ${n.isRead ? 'text-white/70 hover:bg-white/5' : 'bg-accent-cyan/10 text-white font-medium'}`}>
-                  {n.title}
-                </div>
+                <Link 
+                  key={n.id} 
+                  href={n.link || "#"} 
+                  onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                  className={`flex items-start gap-3 p-4 border-b border-white/5 transition-all hover:bg-white/5 ${n.isRead ? 'opacity-60' : 'bg-accent-cyan/5'}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.isRead ? 'bg-white/10 text-white/40' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
+                    <Bell size={14} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm mb-0.5 ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
+                    <div className="text-[10px] text-white/40 line-clamp-2 leading-relaxed">{n.content}</div>
+                  </div>
+                </Link>
               ))
             )}
           </div>
@@ -343,7 +369,12 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                 }`}
               >
                 <item.icon size={18} strokeWidth={active ? 2.5 : 2} />
-                <span className="text-sm">{item.label}</span>
+                <span className="text-sm flex-1">{item.label}</span>
+                {item.label === "Governance" && pendingReviews > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-accent-yellow text-background text-[10px] font-bold flex items-center justify-center shadow-lg animate-pulse">
+                    {pendingReviews}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -371,19 +402,36 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={notificationsRef} className="absolute bottom-[calc(100%+10px)] left-0 w-[300px] glass-card p-0 overflow-hidden z-50 !bg-[#1a2f3a]">
-              <div className="p-3 border-b border-white/10 font-bold text-sm text-white flex justify-between">
-                Notifications
-                {unreadCount > 0 && <span className="text-accent-cyan text-xs">{unreadCount} new</span>}
+            <div ref={notificationsRef} className="absolute bottom-[calc(100%+10px)] left-0 w-[300px] glass-card p-0 overflow-hidden z-50 !bg-[#1a2f3a]/80 backdrop-blur-xl border border-white/20 shadow-2xl">
+              <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-accent-cyan" />
+                  <span>Notifications</span>
+                </div>
+                {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2 !py-0.5 !text-[10px]">{unreadCount} new</span>}
               </div>
-              <div className="max-h-[300px] overflow-y-auto">
+              <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-white/50">No notif</div>
+                  <div className="p-8 text-center flex flex-col items-center gap-2">
+                    <Bell size={32} className="text-white/10" />
+                    <div className="text-xs text-white/30">No notifications yet</div>
+                  </div>
                 ) : (
                   notifications.map(n => (
-                    <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-3 text-sm border-b border-white/5 cursor-pointer ${n.isRead ? 'text-white/70 hover:bg-white/5' : 'bg-accent-cyan/10 text-white font-medium'}`}>
-                      {n.title}
-                    </div>
+                    <Link 
+                      key={n.id} 
+                      href={n.link || "#"} 
+                      onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                      className={`flex items-start gap-3 p-4 border-b border-white/5 transition-all hover:bg-white/5 ${n.isRead ? 'opacity-60' : 'bg-accent-cyan/5'}`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.isRead ? 'bg-white/10 text-white/40' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
+                        <Bell size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm mb-0.5 ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
+                        <div className="text-[10px] text-white/40 line-clamp-2 leading-relaxed">{n.content}</div>
+                      </div>
+                    </Link>
                   ))
                 )}
               </div>
