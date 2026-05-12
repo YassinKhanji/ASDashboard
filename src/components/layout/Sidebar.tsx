@@ -116,8 +116,12 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Dropdown Menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 top-16 bg-black/60 backdrop-blur-md z-40 md:hidden animate-in fade-in slide-in-from-top-4">
-          <nav className="bg-white/10 border-b border-white/20 p-4 flex flex-col gap-2">
+        <div className="fixed inset-0 top-16 z-40 md:hidden animate-in fade-in" onClick={() => setIsMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <nav 
+            className="relative m-4 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[32px] p-4 flex flex-col gap-2 animate-in slide-in-from-top-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             {navItems.map((item, index) => {
               const active = isActive(item.href);
               return (
