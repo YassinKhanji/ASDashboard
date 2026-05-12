@@ -31,14 +31,15 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
           <div className="flex-1 flex items-end justify-between gap-2 z-10">
             {(activityData || []).map((day: any, i: number) => (
               <div key={i} className="flex flex-col items-center gap-2 w-full h-full justify-end">
-                <div className="w-full h-full max-h-[120px] flex items-end relative group cursor-pointer">
-                  <div className="w-full bg-white/10 rounded-full absolute bottom-0 h-full" />
-                  <div 
-                    className="w-full bg-white/30 rounded-full relative z-10 flex items-start justify-center pt-1.5 transition-all group-hover:bg-[#4db8ff]" 
-                    style={{ height: day.height }}
-                  >
-                    <span className="text-[9px] font-bold text-white/80 group-hover:text-black">{day.val}</span>
-                  </div>
+                <div className="w-full h-full max-h-[120px] flex items-end relative group cursor-pointer bg-white/10 rounded-full overflow-hidden">
+                  {day.val > 0 && (
+                    <div 
+                      className="w-full bg-white/30 relative z-10 flex items-start justify-center pt-2 transition-all group-hover:bg-[#4db8ff] rounded-t-full" 
+                      style={{ height: day.height }}
+                    >
+                      <span className="text-[9px] font-bold text-white/80 group-hover:text-black">{day.val}</span>
+                    </div>
+                  )}
                 </div>
                 <span className="text-[9px] text-white/60 font-semibold uppercase">{day.label}</span>
               </div>
