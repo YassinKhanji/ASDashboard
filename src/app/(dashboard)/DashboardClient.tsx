@@ -1,10 +1,10 @@
 "use client";
 
-import { Bell, Users, UserCog, ClipboardCheck, Circle, Check, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
+import { Users, UserCog, ClipboardCheck, Circle, Check, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatTime, PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/utils";
 
-export default function DashboardClient({ stats, upcomingSessions, recentProjects, userRole }: any) {
+export default function DashboardClient({ stats, activityData, upcomingSessions, recentProjects, userRole }: any) {
   const activePercent = stats.projectCount > 0 ? Math.round((stats.activeProjectCount / stats.projectCount) * 100) : 0;
   const pendingPercent = stats.projectCount > 0 ? Math.round((stats.pendingReviewCount / stats.projectCount) * 100) : 0;
 
@@ -12,16 +12,9 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
     <div className="w-full h-auto md:h-full flex flex-col animate-in fade-in duration-500">
       
       {/* Header */}
-      <header className="flex justify-between items-center mb-4 shrink-0">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight">Overview</h1>
-          <p className="text-xs text-white/60">Avenir Souriant — Internal Management</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="text-white/60 hover:text-white transition-colors bg-white/5 p-2 rounded-full border border-white/10">
-            < Bell size={16} />
-          </button>
-        </div>
+      <header className="mb-4 shrink-0">
+        <h1 className="text-xl font-extrabold tracking-tight">Overview</h1>
+        <p className="text-xs text-white/60">Avenir Souriant — Internal Management</p>
       </header>
 
       {/* Main Grid */}
@@ -36,15 +29,7 @@ export default function DashboardClient({ stats, upcomingSessions, recentProject
             </button>
           </div>
           <div className="flex-1 flex items-end justify-between gap-2 z-10">
-            {[
-              { label: "Sun", height: "45%", val: "12" },
-              { label: "Mon", height: "65%", val: "18" },
-              { label: "Tue", height: "55%", val: "15" },
-              { label: "Wed", height: "80%", val: "22" },
-              { label: "Thu", height: "40%", val: "10" },
-              { label: "Fri", height: "75%", val: "20" },
-              { label: "Sat", height: "90%", val: "28" },
-            ].map((day, i) => (
+            {(activityData || []).map((day: any, i: number) => (
               <div key={i} className="flex flex-col items-center gap-2 w-full h-full justify-end">
                 <div className="w-full h-full max-h-[120px] flex items-end relative group cursor-pointer">
                   <div className="w-full bg-white/10 rounded-full absolute bottom-0 h-full" />

@@ -1,12 +1,23 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { canViewAllProjects } from "@/lib/permissions";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user) return NextResponse.json([], { status: 401 });
+  if (!session?.user?.id) return NextResponse.json([], { status: 401 });
+
+  const where = canViewAllProjects(session.user.role as any) 
+    ? {} 
+    : {
+        OR: [
+          { createdById: session.user.id },
+          { staff: { some: { userId: session.user.id } } }
+        ]
+      };
 
   const projects = await prisma.project.findMany({
+    where,
     orderBy: { updatedAt: "desc" },
     include: {
       createdBy: { select: { name: true } },

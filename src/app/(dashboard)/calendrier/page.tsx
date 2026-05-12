@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Printer, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Filter, X } from "lucide-react";
+import Link from "next/link";
 
 interface SessionEvent {
   id: string; startTime: string; endTime: string; isCancelled: boolean;
@@ -20,13 +21,32 @@ export default function CalendrierPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterRoom, setFilterRoom] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // Modals state
+  const [selectedSession, setSelectedSession] = useState<SessionEvent | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+  const [newSessionData, setNewSessionData] = useState<{date: Date, hour: number, roomId: string | null}>({date: new Date(), hour: 9, roomId: null});
+  const [projects, setProjects] = useState<{id: string, title: string}[]>([]);
+  const [form, setForm] = useState({ projectId: "", duration: 1, notes: "" });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    fetchData();
+  }, []);
+
+  function fetchData() {
+    setLoading(true);
     Promise.all([
       fetch("/api/sessions").then(r => r.json()),
       fetch("/api/rooms").then(r => r.json()),
-    ]).then(([s, r]) => { setSessions(s); setRooms(r); }).finally(() => setLoading(false));
-  }, []);
+      fetch("/api/projets").then(r => r.json()),
+    ]).then(([s, r, p]) => { 
+      setSessions(s); 
+      setRooms(r); 
+      setProjects(p.filter((proj: any) => proj.status === "ACTIVE" || proj.status === "APPROVED"));
+    }).finally(() => setLoading(false));
+  }
 
   function navigate(dir: number) {
     const d = new Date(currentDate);
@@ -172,13 +192,14 @@ export default function CalendrierPage() {
                       {getWeekDates().map((d, i) => {
                         const daySessions = getSessionsForDate(d).filter(s => new Date(s.startTime).getHours() === hour);
                         return (
-                          <div key={i} className="border-l border-b border-glass-border/30 p-1 min-h-[48px]">
+                          <div key={i} className="border-l border-b border-glass-border/30 p-1 min-h-[48px] hover:bg-white/5 transition-colors cursor-pointer" onClick={() => handleSlotClick(d, hour)}>
                             {daySessions.map(s => (
                               <div 
                                 key={s.id} 
-                                className="px-2 py-1 mb-1 rounded flex items-center gap-1.5 overflow-hidden group/item cursor-pointer shadow-sm hover:brightness-110 transition-all"
+                                className={`px-2 py-1 mb-1 rounded flex items-center gap-1.5 overflow-hidden group/item cursor-pointer shadow-sm hover:brightness-110 transition-all ${s.isCancelled ? 'opacity-50 line-through' : ''}`}
                                 style={{ backgroundColor: `${s.room.color}33`, borderLeft: `3px solid ${s.room.color}` }}
                                 title={`${s.project.title} — ${s.room.name}`}
+                                onClick={(e) => handleSessionClick(e, s)}
                               >
                                 <span className="text-[10px] font-bold text-white truncate drop-shadow-md">{s.project.title}</span>
                               </div>
@@ -220,8 +241,9 @@ export default function CalendrierPage() {
                         {daySessions.slice(0, 3).map(s => (
                           <div 
                             key={s.id} 
-                            className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white truncate"
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-semibold text-white truncate cursor-pointer hover:brightness-110 ${s.isCancelled ? 'opacity-50 line-through' : ''}`}
                             style={{ backgroundColor: `${s.room.color}44`, borderLeft: `2px solid ${s.room.color}` }}
+                            onClick={(e) => handleSessionClick(e, s)}
                           >
                             {s.project.title}
                           </div>
@@ -264,12 +286,13 @@ export default function CalendrierPage() {
                       {rooms.filter(r => !filterRoom || r.id === filterRoom).map(room => {
                         const roomSessions = sessions.filter(s => s.room.id === room.id && new Date(s.startTime).toDateString() === currentDate.toDateString() && new Date(s.startTime).getHours() === hour);
                         return (
-                          <div key={room.id} className="border-l border-b border-glass-border/30 p-1 min-h-[48px]">
+                          <div key={room.id} className="border-l border-b border-glass-border/30 p-1 min-h-[48px] hover:bg-white/5 cursor-pointer transition-colors" onClick={() => handleSlotClick(currentDate, hour, room.id)}>
                             {roomSessions.map(s => (
                               <div 
                                 key={s.id} 
-                                className="px-2 py-1 mb-1 rounded flex items-center gap-1.5 overflow-hidden cursor-pointer hover:brightness-110 transition-all"
+                                className={`px-2 py-1 mb-1 rounded flex items-center gap-1.5 overflow-hidden cursor-pointer hover:brightness-110 transition-all ${s.isCancelled ? 'opacity-50 line-through' : ''}`}
                                 style={{ backgroundColor: `${room.color}33`, borderLeft: `3px solid ${room.color}` }}
+                                onClick={(e) => handleSessionClick(e, s)}
                               >
                                 <span className="text-xs font-bold text-white truncate drop-shadow-md">{s.project.title}</span>
                               </div>
@@ -283,6 +306,115 @@ export default function CalendrierPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* New Session Modal */}
+      {showNewSessionModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowNewSessionModal(false)}>
+          <div className="glass-card w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Add Session</h3>
+              <button className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10" onClick={() => setShowNewSessionModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateSession} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Date</label>
+                  <div className="px-3 py-2 bg-white/5 rounded-lg text-sm text-white">{newSessionData.date.toDateString()}</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Time</label>
+                  <div className="px-3 py-2 bg-white/5 rounded-lg text-sm text-white">{newSessionData.hour}:00</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Project <span className="text-accent-yellow">*</span></label>
+                <select className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white" required value={form.projectId} onChange={e => setForm(f => ({...f, projectId: e.target.value}))}>
+                  <option value="">Select project...</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Room <span className="text-accent-yellow">*</span></label>
+                <select className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white" required value={newSessionData.roomId || ""} onChange={e => setNewSessionData(d => ({...d, roomId: e.target.value}))}>
+                  {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-secondary mb-1.5">Duration (hours)</label>
+                <input type="number" min="1" max="8" className="w-full bg-glass-surface border border-glass-border rounded-xl px-4 py-2.5 text-white" value={form.duration} onChange={e => setForm(f => ({...f, duration: Number(e.target.value)}))} />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-glass-border">
+                <button type="button" className="btn-glass" onClick={() => setShowNewSessionModal(false)}>Cancel</button>
+                <button type="submit" className="btn-glass btn-glass-primary" disabled={saving || !form.projectId}>{saving ? "Saving..." : "Save"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Session Details Modal */}
+      {showSessionModal && selectedSession && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowSessionModal(false)}>
+          <div className="glass-card w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">{selectedSession.project.title}</h3>
+              <button className="p-1 rounded-lg text-text-secondary hover:text-white hover:bg-white/10" onClick={() => setShowSessionModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-3 mb-6 text-sm">
+              <div className="flex items-center justify-between border-b border-glass-border/50 pb-2">
+                <span className="text-text-secondary">Room</span>
+                <span className="font-semibold flex items-center gap-2 text-white">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedSession.room.color }} />
+                  {selectedSession.room.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-glass-border/50 pb-2">
+                <span className="text-text-secondary">Date</span>
+                <span className="font-semibold text-white">{new Date(selectedSession.startTime).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-glass-border/50 pb-2">
+                <span className="text-text-secondary">Time</span>
+                <span className="font-semibold text-white">
+                  {new Date(selectedSession.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+                  {new Date(selectedSession.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-text-secondary">Status</span>
+                <span className={`font-semibold ${selectedSession.isCancelled ? 'text-red-400' : 'text-accent-lime'}`}>
+                  {selectedSession.isCancelled ? 'Cancelled' : 'Scheduled'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Link href={`/projets/${selectedSession.project.id}`} className="btn-glass w-full justify-center">
+                View Project
+              </Link>
+              {!selectedSession.isCancelled && (
+                <button className="btn-glass bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" onClick={handleCancelSession} disabled={saving}>
+                  {saving ? "Processing..." : "Cancel Session"}
+                </button>
+              )}
+              {selectedSession.isCancelled && (
+                <button className="btn-glass bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/40" onClick={handleDeleteSession} disabled={saving}>
+                  {saving ? "Deleting..." : "Delete Permanently"}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

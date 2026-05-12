@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, MessageSquare, X, Tag } from "lucide-react";
+import { Plus, MessageSquare, X, Tag, Search, Filter } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 interface Discussion {
@@ -20,13 +20,20 @@ export default function DiscussionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: "", message: "", tag: "" });
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTag, setActiveTag] = useState("");
 
   useEffect(() => {
-    fetch("/api/discussions")
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("search", searchQuery);
+    if (activeTag) params.set("tag", activeTag);
+    
+    fetch(`/api/discussions?${params.toString()}`)
       .then((r) => r.json())
       .then(setDiscussions)
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchQuery, activeTag]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +65,36 @@ export default function DiscussionsPage() {
         <button className="btn-glass btn-glass-primary" onClick={() => setShowModal(true)}>
           <Plus size={18} strokeWidth={2.5} /> New discussion
         </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+          <input
+            type="text"
+            placeholder="Search discussions..."
+            className="w-full bg-glass-surface border border-glass-border rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-text-secondary/50 focus:outline-none focus:border-accent-cyan transition-colors"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+          <button 
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${!activeTag ? 'bg-white/10 text-white' : 'bg-glass-surface border border-glass-border text-text-secondary hover:text-white'}`}
+            onClick={() => setActiveTag("")}
+          >
+            All
+          </button>
+          {["QUESTION", "FEEDBACK", "DECISION", "ACTION_ITEM"].map(tag => (
+            <button 
+              key={tag}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTag === tag ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30' : 'bg-glass-surface border border-glass-border text-text-secondary hover:text-white'}`}
+              onClick={() => setActiveTag(tag)}
+            >
+              <Tag size={12} /> {tag.replace("_", " ")}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (

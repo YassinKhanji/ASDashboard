@@ -15,6 +15,7 @@ export default async function DashboardPage() {
     staffCount,
     upcomingSessions,
     recentProjects,
+    recentEnrollments,
   ] = await Promise.all([
     prisma.project.count(),
     prisma.project.count({ where: { status: "ACTIVE" } }),
@@ -41,7 +42,42 @@ export default async function DashboardPage() {
         _count: { select: { enrollments: true } },
       },
     }),
+    // Fetch recent enrollments to calculate activity for the last 7 days
+    prisma.enrollment.findMany({
+      where: {
+        enrolledAt: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 7)),
+        },
+      },
+      select: {
+        enrolledAt: true,
+      },
+    }),
   ]);
+
+  // Process enrollments into daily counts for the last 7 days
+  const activityData = [
+    { label: "Sun", count: 0 },
+    { label: "Mon", count: 0 },
+    { label: "Tue", count: 0 },
+    { label: "Wed", count: 0 },
+    { label: "Thu", count: 0 },
+    { label: "Fri", count: 0 },
+    { label: "Sat", count: 0 },
+  ];
+
+  recentEnrollments.forEach((e) => {
+    const day = e.enrolledAt.getDay(); // 0 is Sunday
+    activityData[day].count++;
+  });
+
+  // Calculate percentage height based on max count (with a minimum max of 10 for visual scale)
+  const maxCount = Math.max(10, ...activityData.map(d => d.count));
+  const chartData = activityData.map(d => ({
+    label: d.label,
+    val: d.count.toString(),
+    height: `${Math.max(5, Math.round((d.count / maxCount) * 100))}%`, // Min height 5% for visibility
+  }));
 
   return (
     <DashboardClient
@@ -52,6 +88,7 @@ export default async function DashboardPage() {
         studentCount,
         staffCount,
       }}
+      activityData={chartData}
       upcomingSessions={JSON.parse(JSON.stringify(upcomingSessions))}
       recentProjects={JSON.parse(JSON.stringify(recentProjects))}
       userRole={session.user.role}

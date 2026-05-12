@@ -8,9 +8,26 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
+  const search = searchParams.get("search");
+  const tag = searchParams.get("tag");
+
+  const whereClause: any = {};
+  
+  if (projectId) whereClause.projectId = projectId;
+  else whereClause.projectId = null;
+
+  if (search) {
+    whereClause.title = { contains: search, mode: "insensitive" };
+  }
+
+  if (tag) {
+    whereClause.messages = {
+      some: { tag: tag }
+    };
+  }
 
   const discussions = await prisma.discussion.findMany({
-    where: projectId ? { projectId } : { projectId: null },
+    where: whereClause,
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: { select: { name: true } },
