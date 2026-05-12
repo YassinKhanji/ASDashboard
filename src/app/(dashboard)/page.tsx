@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
 
   const [
     projectCount,
@@ -91,7 +89,7 @@ export default async function DashboardPage() {
       activityData={chartData}
       upcomingSessions={JSON.parse(JSON.stringify(upcomingSessions))}
       recentProjects={JSON.parse(JSON.stringify(recentProjects))}
-      userRole={session.user.role}
+      userRole={"ADMIN"}
     />
   );
 }

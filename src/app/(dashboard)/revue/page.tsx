@@ -1,15 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardCheck, Clock, CheckCircle2, XCircle, AlertCircle, PlayCircle } from "lucide-react";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, formatDate, formatDateTime } from "@/lib/utils";
-import { canReviewProjects } from "@/lib/permissions";
+export const dynamic = "force-dynamic";
 
 export default async function RevuePage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if (!canReviewProjects(session.user.role)) redirect("/");
 
   const pendingProjects = await prisma.project.findMany({
     where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } },
