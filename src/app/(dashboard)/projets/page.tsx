@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Plus, FolderKanban, MoreHorizontal, ArrowRight } from "lucide-react";
+import { Plus, FolderKanban, MoreHorizontal, ArrowRight, Edit3, Trash2, Eye } from "lucide-react";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, formatDate } from "@/lib/utils";
 
 interface Project {
@@ -27,6 +27,21 @@ export default function ProjetsPage() {
     if (status === "ACTIVE" || status === "APPROVED") return "badge-lime";
     if (status === "UNDER_REVIEW") return "badge-yellow";
     return "badge-white";
+  }
+
+  async function handleDeleteProject(id: string, title: string) {
+    if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/projets/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      } else {
+        alert("Failed to delete project.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An error occurred while deleting the project.");
+    }
   }
 
   return (
@@ -114,9 +129,10 @@ export default function ProjetsPage() {
                       <td className="px-6 py-4 text-sm font-bold text-white">{p._count.sessions}</td>
                       <td className="px-6 py-4 text-xs text-text-secondary">{formatDate(p.updatedAt)}</td>
                       <td className="px-6 py-4 text-right">
-                        <button className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors">
-                          <MoreHorizontal size={18} />
-                        </button>
+                        <ProjectActions 
+                          project={p} 
+                          onDelete={handleDeleteProject} 
+                        />
                       </td>
                     </tr>
                   ))}
@@ -138,9 +154,15 @@ export default function ProjetsPage() {
                       <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider">{p.targetAgeGroup || "All ages"}</span>
                     </div>
                   </div>
-                  <span className={`glass-badge !px-2.5 !py-1 !text-[10px] ${getStatusColor(p.status)}`}>
-                    {(PROJECT_STATUS_LABELS as any)[p.status]}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`glass-badge !px-2.5 !py-1 !text-[10px] ${getStatusColor(p.status)}`}>
+                      {(PROJECT_STATUS_LABELS as any)[p.status]}
+                    </span>
+                    <ProjectActions 
+                      project={p} 
+                      onDelete={handleDeleteProject} 
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5">
@@ -166,6 +188,69 @@ export default function ProjetsPage() {
             ))}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function ProjectActions({ project, onDelete }: { project: Project, onDelete: (id: string, title: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative inline-block" ref={menuRef}>
+      <button 
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <MoreHorizontal size={18} />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 glass-card p-1.5 z-50 shadow-2xl animate-in fade-in zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/20">
+          <Link 
+            href={`/projets/${project.id}`}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={() => setIsOpen(false)}
+          >
+            <Eye size={14} /> View Details
+          </Link>
+          <Link 
+            href={`/projets/${project.id}/modifier`}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={() => setIsOpen(false)}
+          >
+            <Edit3 size={14} /> Edit Project
+          </Link>
+          <div className="h-px bg-white/10 my-1" />
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsOpen(false);
+              onDelete(project.id, project.title);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 size={14} /> Delete Project
+          </button>
+        </div>
       )}
     </div>
   );
