@@ -26,19 +26,20 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Vue d'ensemble", tooltip: "Vue d'ensemble" },
-  { href: "/projets", icon: FolderKanban, label: "Projets", tooltip: "Projets" },
-  { href: "/etudiants", icon: Users, label: "Étudiants", tooltip: "Étudiants" },
-  { href: "/personnel", icon: UserCog, label: "Personnel", tooltip: "Personnel" },
-  { href: "/calendrier", icon: CalendarDays, label: "Calendrier", tooltip: "Calendrier" },
+  { href: "/", icon: LayoutDashboard, label: "Overview", tooltip: "Overview" },
+  { href: "/projets", icon: FolderKanban, label: "Projects", tooltip: "Projects" },
+  { href: "/etudiants", icon: Users, label: "Students", tooltip: "Students" },
+  { href: "/personnel", icon: UserCog, label: "Staff", tooltip: "Staff" },
+  { href: "/calendrier", icon: CalendarDays, label: "Calendar", tooltip: "Calendar" },
   { href: "/discussions", icon: MessageSquare, label: "Discussions", tooltip: "Discussions" },
-  { href: "/revue", icon: ClipboardCheck, label: "Gouvernance", tooltip: "Gouvernance" },
-  { href: "/parametres", icon: Settings, label: "Paramètres", tooltip: "Paramètres" },
+  { href: "/revue", icon: ClipboardCheck, label: "Governance", tooltip: "Governance" },
+  { href: "/parametres", icon: Settings, label: "Settings", tooltip: "Settings" },
 ];
 
 export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -117,19 +118,6 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
       {isMenuOpen && (
         <div className="fixed inset-0 top-16 bg-black/60 backdrop-blur-md z-40 md:hidden animate-in fade-in slide-in-from-top-4">
           <nav className="bg-white/10 border-b border-white/20 p-4 flex flex-col gap-2">
-            <div className="px-4 mb-2">
-              <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-accent-cyan"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-
             {navItems.map((item, index) => {
               const active = isActive(item.href);
               return (
@@ -149,6 +137,100 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
               );
             })}
           </nav>
+        </div>
+      )}
+
+      {/* Mobile Floating Search Button */}
+      <button 
+        className="fixed bottom-6 right-6 w-14 h-14 bg-accent-cyan rounded-full shadow-[0_4px_20px_rgba(77,184,255,0.4)] flex items-center justify-center text-black z-40 md:hidden transition-transform active:scale-95 no-print"
+        onClick={() => setIsMobileSearchOpen(true)}
+      >
+        <Search size={24} strokeWidth={2.5} />
+      </button>
+
+      {/* Mobile Search Overlay */}
+      {isMobileSearchOpen && (
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-xl z-50 md:hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-3 p-4 border-b border-white/10">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="search"
+                placeholder="Search projects, students, staff..."
+                className="w-full bg-white/10 border border-white/20 rounded-full pl-11 pr-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-accent-cyan transition-all"
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button 
+              className="p-3 text-white/70 hover:text-white bg-white/5 rounded-full"
+              onClick={() => {
+                setIsMobileSearchOpen(false);
+                setSearchQuery("");
+                setSearchResults(null);
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4">
+            {searchQuery.trim().length >= 2 && searchResults ? (
+              <div className="space-y-6 pb-20">
+                {searchResults.projects?.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-accent-cyan uppercase tracking-wider mb-2 flex items-center gap-2"><FolderKanban size={14}/> Projects</div>
+                    <div className="flex flex-col gap-2">
+                      {searchResults.projects.map((p: any) => (
+                        <Link key={p.id} href={`/projets/${p.id}`} onClick={() => setIsMobileSearchOpen(false)} className="bg-white/5 p-3 rounded-xl active:bg-white/10">
+                          <div className="text-sm font-bold text-white mb-0.5">{p.title}</div>
+                          <div className="text-[10px] text-white/50">{p.type} • {p.status}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {searchResults.students?.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-accent-cyan uppercase tracking-wider mb-2 flex items-center gap-2"><Users size={14}/> Students</div>
+                    <div className="flex flex-col gap-2">
+                      {searchResults.students.map((s: any) => (
+                        <Link key={s.id} href={`/etudiants/${s.id}`} onClick={() => setIsMobileSearchOpen(false)} className="bg-white/5 p-3 rounded-xl active:bg-white/10">
+                          <div className="text-sm font-bold text-white">{s.firstName} {s.lastName}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {searchResults.staff?.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-accent-cyan uppercase tracking-wider mb-2 flex items-center gap-2"><UserCog size={14}/> Staff</div>
+                    <div className="flex flex-col gap-2">
+                      {searchResults.staff.map((s: any) => (
+                        <Link key={s.id} href={`/personnel/${s.id}`} onClick={() => setIsMobileSearchOpen(false)} className="bg-white/5 p-3 rounded-xl active:bg-white/10">
+                          <div className="text-sm font-bold text-white mb-0.5">{s.name}</div>
+                          <div className="text-[10px] text-white/50">{s.role}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(!searchResults.projects?.length && !searchResults.students?.length && !searchResults.staff?.length) && (
+                  <div className="text-center text-white/50 text-sm mt-10">No results found</div>
+                )}
+              </div>
+            ) : searchQuery.trim().length > 0 ? (
+              <div className="flex justify-center mt-10">
+                <div className="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="text-center text-white/30 text-sm mt-10">Type to search across the platform</div>
+            )}
+          </div>
         </div>
       )}
 
