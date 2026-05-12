@@ -28,20 +28,20 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
               Week <ChevronDown size={12} />
             </button>
           </div>
-          <div className="flex-1 flex items-end justify-between gap-2 z-10">
+          <div className="flex-1 flex items-end justify-between gap-3 z-10 px-2 pt-2">
             {(activityData || []).map((day: any, i: number) => (
-              <div key={i} className="flex flex-col items-center gap-2 w-full h-full justify-end">
-                <div className="w-full h-full max-h-[120px] flex items-end relative group cursor-pointer bg-white/10 rounded-full overflow-hidden">
-                  {Number(day.val) > 0 ? (
-                    <div 
-                      className="w-full bg-white/30 relative z-10 flex items-start justify-center pt-2 transition-all group-hover:bg-[#4db8ff] rounded-t-full" 
-                      style={{ height: day.height }}
-                    >
-                      <span className="text-[9px] font-bold text-white/80 group-hover:text-black">{day.val}</span>
-                    </div>
-                  ) : null}
+              <div key={i} className="flex flex-col items-center gap-3 w-full h-full justify-end group">
+                <div className="w-full h-full flex items-end relative cursor-pointer bg-white/[0.03] rounded-full overflow-hidden border border-white/5 shadow-inner">
+                  <div 
+                    className="w-full bg-gradient-to-t from-accent-cyan/40 to-accent-cyan/10 relative z-10 flex items-start justify-center pt-3 transition-all duration-700 ease-out group-hover:from-accent-cyan group-hover:to-accent-cyan/40 rounded-full" 
+                    style={{ height: day.height }}
+                  >
+                    {Number(day.val) > 0 && (
+                      <span className="text-[10px] font-black text-white group-hover:text-black transition-colors duration-300 drop-shadow-md">{day.val}</span>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[9px] text-white/60 font-semibold uppercase">{day.label}</span>
+                <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider group-hover:text-accent-cyan transition-colors">{day.label}</span>
               </div>
             ))}
           </div>
