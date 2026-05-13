@@ -84,6 +84,12 @@ export async function DELETE(
   const existing = await prisma.student.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
-  await prisma.student.delete({ where: { id } });
+  // Manually delete relations first to ensure it works even if DB constraints are not set to cascade
+  await prisma.$transaction([
+    prisma.attendance.deleteMany({ where: { studentId: id } }),
+    prisma.enrollment.deleteMany({ where: { studentId: id } }),
+    prisma.student.delete({ where: { id } }),
+  ]);
+
   return NextResponse.json({ ok: true });
 }

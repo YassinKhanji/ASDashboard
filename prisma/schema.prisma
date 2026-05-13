@@ -194,7 +194,7 @@ model Enrollment {
   status     EnrollmentStatus @default(CONFIRMED)
   enrolledAt DateTime         @default(now())
 
-  student    Student          @relation(fields: [studentId], references: [id])
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   project    Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, projectId])
@@ -206,7 +206,7 @@ model Attendance {
   sessionId String
   status    AttendanceStatus @default(PRESENT)
 
-  student   Student          @relation(fields: [studentId], references: [id])
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   session   Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, sessionId])
