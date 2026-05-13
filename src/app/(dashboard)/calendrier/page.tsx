@@ -17,7 +17,7 @@ interface CalendarEvent {
 
 type ViewMode = "day" | "week" | "month";
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7:00 to 23:00 (Midnight)
 
 export default function CalendrierPage() {
   const [sessions, setSessions] = useState<SessionEvent[]>([]);
@@ -212,9 +212,9 @@ export default function CalendrierPage() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+      <div className="flex flex-col gap-8">
+        <div className="w-full">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
               <h1 className="header-hero mb-2">Calendar 2026</h1>
@@ -458,16 +458,25 @@ export default function CalendrierPage() {
             <div className="overflow-x-auto custom-scrollbar">
               <div className="min-w-[600px]">
                 <div 
-                  className="grid border-b border-glass-border/50 bg-white/5" 
+                  className="grid border-b border-glass-border/50 bg-white/5 sticky top-0 z-20" 
                   style={{ gridTemplateColumns: `60px ${filteredRooms.map(() => "1fr").join(" ")}` }}
                 >
-                  <div className="p-2" />
-                  {filteredRooms.map(r => (
-                    <div key={r.id} className="p-3 text-center border-l border-glass-border/50 font-bold text-white flex items-center justify-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: r.color }} />
-                      <span className="text-sm">{r.name}</span>
+                  <div className="p-2 flex items-center justify-center border-r border-glass-border/30">
+                    <div className="p-1 rounded bg-white/10 text-accent-cyan cursor-pointer hover:bg-white/20 transition-colors" title="Filter Rooms" onClick={() => setFilterRoom("")}>
+                      <Filter size={14} />
                     </div>
-                  ))}
+                  </div>
+                  {filteredRooms.map(r => {
+                    const capacity = (rooms as any).find((rm: any) => rm.id === r.id)?.capacity;
+                    return (
+                      <div key={r.id} className="p-3 text-center border-l border-glass-border/50 font-bold text-white flex flex-col items-center justify-center gap-1 group relative bg-white/[0.02]">
+                        <div className="w-full h-1 absolute top-0 left-0 transition-all group-hover:h-1.5" style={{ backgroundColor: r.color }} />
+                        <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold mt-1">Room</span>
+                        <span className="text-sm font-bold truncate max-w-full text-white/90">{r.name}</span>
+                        {capacity && <span className="text-[10px] opacity-40 font-medium italic">Cap: {capacity}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="h-[600px] overflow-y-auto custom-scrollbar">
                   <div 
@@ -538,15 +547,16 @@ export default function CalendrierPage() {
         </div>
       )}
 
-        </div>{/* end flex-1 */}
-
-        {/* Sidebar Legend & Rules */}
-        <div className="w-full lg:w-80 shrink-0 space-y-6">
+        </div>{/* end main content area */}
+        
+        {/* Bottom Widgets Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-8 border-t border-glass-border">
+          {/* Legend */}
           <div className="glass-card">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <span className="text-accent-cyan">●</span> Legend
             </h3>
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f87171' }} />
                 <span className="text-white/80">Public Holidays</span>
@@ -561,11 +571,11 @@ export default function CalendrierPage() {
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#22c55e' }} />
-                <span className="text-white/80">Courses (Classroom 3)</span>
+                <span className="text-white/80">Courses</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#d2b48c' }} />
-                <span className="text-white/80">Halakas (Classroom 1)</span>
+                <span className="text-white/80">Halakas</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#facc15' }} />
@@ -574,11 +584,12 @@ export default function CalendrierPage() {
             </div>
           </div>
 
+          {/* Key Rules */}
           <div className="glass-card">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <span className="text-accent-yellow">!</span> Key Rules
             </h3>
-            <ul className="space-y-3 text-xs text-white/70 list-disc pl-4">
+            <ul className="space-y-2 text-xs text-white/70 list-disc pl-4">
               <li>Public holidays = normal operations</li>
               <li>Islamic holidays = no courses or halakas</li>
               <li>Ramadan = no courses or halakas</li>
@@ -587,15 +598,16 @@ export default function CalendrierPage() {
             </ul>
           </div>
 
+          {/* Print & Sync */}
           <div className="glass-card">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Printer size={18} className="text-accent-cyan" /> Print & Sync
             </h3>
-            <div className="space-y-3">
-              <button className="btn-glass w-full justify-center text-xs" onClick={() => window.print()}>
+            <div className="flex flex-col gap-3">
+              <button className="btn-glass w-full justify-center text-xs py-2.5" onClick={() => window.print()}>
                 Download PDF Calendar
               </button>
-              <a href="/Calendar_2026_1.ics" download className="btn-glass w-full justify-center text-xs">
+              <a href="/Calendar_2026_1.ics" download className="btn-glass w-full justify-center text-xs py-2.5">
                 Download iCal File
               </a>
             </div>
