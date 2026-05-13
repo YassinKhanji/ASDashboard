@@ -38,6 +38,7 @@ const navItems = [
   { href: "/parametres", icon: Settings, label: "settings" },
 ];
 
+export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const { language, setLanguage, t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
