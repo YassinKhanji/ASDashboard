@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Users, UserCog, ClipboardCheck, Circle, Check, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatTime, PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/utils";
 
-export default function DashboardClient({ stats, activityData, upcomingSessions, recentProjects, userRole }: any) {
+export default function DashboardClient({ stats, activityData, upcomingSessions, recentProjects, userRole, currentRange }: any) {
+  const router = useRouter();
   const activePercent = stats.projectCount > 0 ? Math.round((stats.activeProjectCount / stats.projectCount) * 100) : 0;
   const pendingPercent = stats.projectCount > 0 ? Math.round((stats.pendingReviewCount / stats.projectCount) * 100) : 0;
 
@@ -18,15 +20,24 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
       </header>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-none md:flex-1 min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-none md:h-[320px] min-h-0">
         
         {/* Left Column (Activity) */}
         <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
             <h2 className="text-sm font-bold">Enrollments (Activity)</h2>
-            <button className="text-[10px] text-white/60 flex items-center gap-1 hover:text-white">
-              Week <ChevronDown size={12} />
-            </button>
+            <div className="relative group">
+              <select 
+                className="appearance-none bg-white/5 border border-white/10 rounded-lg pl-2 pr-6 py-1 text-[10px] text-white/60 font-bold hover:text-white hover:bg-white/10 transition-colors cursor-pointer outline-none focus:border-accent-cyan/50"
+                value={currentRange || "week"}
+                onChange={(e) => router.push(`/?range=${e.target.value}`)}
+              >
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+              </select>
+              <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+            </div>
           </div>
           <div className="flex-1 flex items-end justify-between gap-3 z-10 px-2 pt-2">
             {(activityData || []).map((day: any, i: number) => (

@@ -2,8 +2,11 @@ import { prisma } from "@/lib/prisma";
 import DashboardClient from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: any }) {
+  const range = searchParams?.range || "week";
+  const days = range === "month" ? 30 : range === "year" ? 365 : 7;
 
   const [
     projectCount,
@@ -40,11 +43,11 @@ export default async function DashboardPage() {
         _count: { select: { enrollments: true } },
       },
     }),
-    // Fetch recent enrollments to calculate activity for the last 7 days
+    // Fetch recent enrollments to calculate activity for the selected range
     prisma.enrollment.findMany({
       where: {
         enrolledAt: {
-          gte: new Date(new Date().setDate(new Date().getDate() - 7)),
+          gte: new Date(new Date().setDate(new Date().getDate() - days)),
         },
       },
       select: {
@@ -87,6 +90,7 @@ export default async function DashboardPage() {
         staffCount,
       }}
       activityData={chartData}
+      currentRange={range}
       upcomingSessions={JSON.parse(JSON.stringify(upcomingSessions))}
       recentProjects={JSON.parse(JSON.stringify(recentProjects))}
       userRole={"ADMIN"}

@@ -226,10 +226,22 @@ function ProjectActions({ project, onDelete }: { project: Project, onDelete: (id
     e.stopPropagation();
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + 8,
-        left: rect.right - 192, // w-48 is 192px
-      });
+      const menuWidth = 192;
+      const menuHeight = 150; // Approximate height
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      if (left + menuWidth > screenWidth - 10) left = screenWidth - menuWidth - 10;
+      
+      let top = rect.bottom + 8;
+      // If menu would go off bottom, show it above the button
+      if (top + menuHeight > screenHeight - 20) {
+        top = rect.top - menuHeight - 8;
+      }
+      
+      setCoords({ top, left });
     }
     setIsOpen(!isOpen);
   };
