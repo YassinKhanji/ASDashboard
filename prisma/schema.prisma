@@ -261,3 +261,18 @@ model Notification {
 
   @@index([userId, isRead])
 }
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   // 'HOLIDAY', 'ISLAMIC', 'ACADEMIC', 'OBSERVANCE'
+  startTime   DateTime
+  endTime     DateTime
+  allDay      Boolean  @default(false)
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startTime, endTime])
+}
