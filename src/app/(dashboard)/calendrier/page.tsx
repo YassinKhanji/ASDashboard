@@ -277,14 +277,14 @@ export default function CalendrierPage() {
           <div className="w-8 h-8 border-4 border-glass-border border-t-accent-cyan rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="glass-card p-0 overflow-hidden">
+        <div className="glass-card p-0">
           {/* Week View */}
           {view === "week" && (() => {
             const HOUR_HEIGHT = 60;
             const firstHour = HOURS[0];
             const totalHeight = HOURS.length * HOUR_HEIGHT;
             return (
-            <div className="overflow-x-auto custom-scrollbar">
+            <div className="overflow-x-auto custom-scrollbar rounded-xl">
               <div className="min-w-[800px]">
                 <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-glass-border/50 bg-white/5">
                   <div className="p-2" />
@@ -455,8 +455,8 @@ export default function CalendrierPage() {
             const totalHeight = HOURS.length * HOUR_HEIGHT;
             const filteredRooms = rooms.filter(r => !filterRoom || r.id === filterRoom);
             return (
-            <div className="overflow-x-auto custom-scrollbar">
-              <div className="min-w-[600px]">
+            <div className="overflow-x-auto custom-scrollbar rounded-xl">
+              <div className="min-w-[800px]">
                 <div 
                   className="grid border-b border-glass-border/50 bg-white/5 sticky top-0 z-20" 
                   style={{ gridTemplateColumns: `60px ${filteredRooms.map(() => "1fr").join(" ")}` }}
@@ -469,10 +469,10 @@ export default function CalendrierPage() {
                   {filteredRooms.map(r => {
                     const capacity = (rooms as any).find((rm: any) => rm.id === r.id)?.capacity;
                     return (
-                      <div key={r.id} className="p-3 text-center border-l border-glass-border/50 font-bold text-white flex flex-col items-center justify-center gap-1 group relative bg-white/[0.02]">
+                      <div key={r.id} className="p-3 text-center border-l border-glass-border/50 font-bold text-white flex flex-col items-center justify-center gap-1 group relative bg-white/[0.02] min-w-0">
                         <div className="w-full h-1 absolute top-0 left-0 transition-all group-hover:h-1.5" style={{ backgroundColor: r.color }} />
-                        <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold mt-1">Room</span>
-                        <span className="text-sm font-bold truncate max-w-full text-white/90">{r.name}</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold mt-1 block">Room</span>
+                        <span className="text-sm font-bold truncate w-full px-1">{r.name}</span>
                         {capacity && <span className="text-[10px] opacity-40 font-medium italic">Cap: {capacity}</span>}
                       </div>
                     );
