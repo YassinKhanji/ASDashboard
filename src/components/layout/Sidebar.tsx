@@ -148,7 +148,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[32px] flex flex-col">
           <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
             <div className="flex items-center gap-2 relative">
@@ -174,11 +174,10 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                   <Link 
                     key={n.id} 
                     href={n.link || "#"} 
-                    onClick={(e) => { 
-                      e.preventDefault();
+                    onClick={() => { 
                       markAsRead(n.id); 
-                      setShowNotifications(false); 
-                      if (n.link) router.push(n.link);
+                      // Allow Link to navigate before unmounting
+                      setTimeout(() => setShowNotifications(false), 150);
                     }} 
                     className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
                   >
@@ -423,7 +422,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] glass-card p-0 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[32px] flex flex-col">
               <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
                 <div className="flex items-center gap-2 relative">
@@ -449,11 +448,9 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                       <Link 
                         key={n.id} 
                         href={n.link || "#"} 
-                        onClick={(e) => { 
-                          e.preventDefault();
+                        onClick={() => { 
                           markAsRead(n.id); 
-                          setShowNotifications(false); 
-                          if (n.link) router.push(n.link);
+                          setTimeout(() => setShowNotifications(false), 150);
                         }} 
                         className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
                       >
