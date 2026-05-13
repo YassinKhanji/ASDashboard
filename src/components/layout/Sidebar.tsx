@@ -55,9 +55,15 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const [pendingReviews, setPendingReviews] = useState(0);
   
   const searchRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
+  const mobileNotificationsRef = useRef<HTMLDivElement>(null);
+  const desktopNotificationsRef = useRef<HTMLDivElement>(null);
   const bellButtonRef = useRef<HTMLButtonElement>(null);
   const mobileBellButtonRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setShowNotifications(false);
@@ -68,10 +74,28 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   // Close on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node) && 
-          bellButtonRef.current && !bellButtonRef.current.contains(event.target as Node) &&
-          mobileBellButtonRef.current && !mobileBellButtonRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
+      const target = event.target as Node;
+      
+      // Check mobile dropdown
+      const isOutsideMobile = mobileNotificationsRef.current && !mobileNotificationsRef.current.contains(target) && 
+                              mobileBellButtonRef.current && !mobileBellButtonRef.current.contains(target);
+      
+      // Check desktop dropdown
+      const isOutsideDesktop = desktopNotificationsRef.current && !desktopNotificationsRef.current.contains(target) && 
+                               bellButtonRef.current && !bellButtonRef.current.contains(target);
+
+      // If both are true (meaning the click is outside whichever one might be open)
+      // or if we're on mobile and it's outside mobile, or desktop and outside desktop
+      if (showNotifications) {
+        // More robust check: if it's outside both the dropdowns AND both the bell buttons
+        const isOutsideAnyDropdown = (!mobileNotificationsRef.current || !mobileNotificationsRef.current.contains(target)) &&
+                                     (!desktopNotificationsRef.current || !desktopNotificationsRef.current.contains(target));
+        const isOutsideAnyBell = (!mobileBellButtonRef.current || !mobileBellButtonRef.current.contains(target)) &&
+                                 (!bellButtonRef.current || !bellButtonRef.current.contains(target));
+                                 
+        if (isOutsideAnyDropdown && isOutsideAnyBell) {
+          setShowNotifications(false);
+        }
       }
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearch(false);
@@ -164,7 +188,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
+        <div ref={mobileNotificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
           <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
             <div className="flex items-center gap-2 relative">
@@ -202,7 +226,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm mb-1 leading-tight ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
                       <div className="text-xs text-white/40 line-clamp-2 leading-relaxed group-hover:text-white/60 transition-colors">{n.content}</div>
-                      <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{formatDateTime(n.createdAt)}</div>
+                      <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{mounted ? formatDateTime(n.createdAt) : ""}</div>
                     </div>
                     {!n.isRead && <div className="w-2 h-2 rounded-full bg-accent-cyan mt-1.5 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />}
                   </Link>
@@ -437,7 +461,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
+            <div ref={desktopNotificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
               <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
                 <div className="flex items-center gap-2 relative">
@@ -475,7 +499,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                         <div className="flex-1 min-w-0">
                           <div className={`text-sm mb-1 leading-tight ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
                           <div className="text-xs text-white/40 line-clamp-2 leading-relaxed group-hover:text-white/60 transition-colors">{n.content}</div>
-                          <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{formatDateTime(n.createdAt)}</div>
+                          <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{mounted ? formatDateTime(n.createdAt) : ""}</div>
                         </div>
                         {!n.isRead && <div className="w-2 h-2 rounded-full bg-accent-cyan mt-1.5 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />}
                       </Link>

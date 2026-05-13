@@ -38,8 +38,12 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     fetch(`/api/projets/${id}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) return null;
+        return r.json();
+      })
       .then(setProject)
+      .catch(() => setProject(null))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -259,10 +263,10 @@ export default function ProjectDetailPage() {
                 {project.staff.map((s: any) => (
                   <div key={s.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/10 shadow-inner flex items-center justify-center font-bold text-white shrink-0">
-                      {s.user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                      {s.user?.name ? s.user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "??"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white text-sm truncate">{s.user.name}</div>
+                      <div className="font-bold text-white text-sm truncate">{s.user?.name || "Unknown Staff"}</div>
                       <div className="text-xs text-text-secondary truncate">{s.user.email}</div>
                     </div>
                     <span className="glass-badge badge-white">{STAFF_ROLE_LABELS[s.role as keyof typeof STAFF_ROLE_LABELS]}</span>
