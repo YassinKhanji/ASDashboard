@@ -61,6 +61,12 @@ const translations: Record<Language, Record<string, string>> = {
     year: "Year",
     total: "Total",
     review: "Review",
+    mark_attendance: "Mark Attendance",
+    present: "Present",
+    absent: "Absent",
+    late: "Late",
+    excused: "Excused",
+    attendance_recorded: "Attendance recorded successfully",
   },
   fr: {
     // Sidebar
@@ -110,6 +116,12 @@ const translations: Record<Language, Record<string, string>> = {
     year: "Année",
     total: "Total",
     review: "Revue",
+    mark_attendance: "Marquer la présence",
+    present: "Présent",
+    absent: "Absent",
+    late: "En retard",
+    excused: "Excusé",
+    attendance_recorded: "Présence enregistrée avec succès",
   },
 };
 

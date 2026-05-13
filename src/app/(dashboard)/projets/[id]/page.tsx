@@ -6,8 +6,9 @@ import Link from "next/link";
 import {
   ArrowLeft, Users, Calendar, DollarSign, Send,
   CheckCircle, XCircle, RotateCcw, Clock, MessageSquare,
-  UserCog, BarChart3, History, AlertTriangle, X
+  UserCog, BarChart3, History, AlertTriangle, X, UserCheck
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, STAFF_ROLE_LABELS,
   ENROLLMENT_STATUS_LABELS, REVIEW_ACTION_LABELS,
@@ -26,6 +27,7 @@ export default function ProjectDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
@@ -332,7 +334,18 @@ export default function ProjectDetailPage() {
                       <div className="font-bold text-white text-sm">{formatDate(s.startTime)}</div>
                       <div className="text-xs text-text-secondary mt-1">{formatTime(s.startTime)} – {formatTime(s.endTime)} · {s.room.name}</div>
                     </div>
-                    {s.isCancelled && <span className="glass-badge badge-white border-red-500/30 text-red-400 bg-red-500/10">Cancelled</span>}
+                    <div className="flex items-center gap-2">
+                      {!s.isCancelled && (
+                        <Link 
+                          href={`/sessions/${s.id}/attendance`} 
+                          className="p-2 rounded-xl bg-white/5 border border-white/10 text-text-secondary hover:text-accent-cyan hover:border-accent-cyan/50 transition-all group/btn"
+                          title={t('mark_attendance')}
+                        >
+                          <UserCheck size={18} className="group-hover/btn:scale-110 transition-transform" />
+                        </Link>
+                      )}
+                      {s.isCancelled && <span className="glass-badge badge-white border-red-500/30 text-red-400 bg-red-500/10">Cancelled</span>}
+                    </div>
                   </div>
                 ))}
               </div>

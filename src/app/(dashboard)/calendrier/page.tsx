@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Printer, Filter, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Filter, X, UserCheck } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface SessionEvent {
   id: string; startTime: string; endTime: string; isCancelled: boolean;
@@ -23,6 +24,7 @@ export default function CalendrierPage() {
   const [sessions, setSessions] = useState<SessionEvent[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [rooms, setRooms] = useState<{ id: string; name: string; color: string }[]>([]);
+  const { t } = useLanguage();
   const [view, setView] = useState<ViewMode>("month");
   const [currentDate, setCurrentDate] = useState(new Date("2026-01-01"));
   const [filterRoom, setFilterRoom] = useState("");
@@ -706,6 +708,11 @@ export default function CalendrierPage() {
             </div>
 
             <div className="flex flex-col gap-2">
+              {!selectedSession.isCancelled && (
+                <Link href={`/sessions/${selectedSession.id}/attendance`} className="btn-glass w-full justify-center btn-glass-primary">
+                  <UserCheck size={16} /> {t('mark_attendance')}
+                </Link>
+              )}
               <Link href={`/projets/${selectedSession.project.id}`} className="btn-glass w-full justify-center">
                 View Project
               </Link>
