@@ -292,11 +292,11 @@ export default function CalendrierPage() {
 
           {/* Month View */}
           {view === "month" && (
-            <div className="min-w-[600px] overflow-x-auto custom-scrollbar">
+            <div className="w-full overflow-hidden">
               <div className="grid grid-cols-7 border-b border-glass-border/50 bg-white/5">
                 {dayNames.map(d => (
-                  <div key={d} className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                    {d}
+                  <div key={d} className="p-2 sm:p-3 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary">
+                    {d.substring(0, 1)}<span className="hidden sm:inline">{d.substring(1)}</span>
                   </div>
                 ))}
               </div>
@@ -308,23 +308,26 @@ export default function CalendrierPage() {
                   return (
                     <div 
                       key={i} 
-                      className={`min-h-[100px] p-2 border-r border-b border-glass-border/30 transition-colors
+                      className={`min-h-[60px] sm:min-h-[100px] p-1 sm:p-2 border-r border-b border-glass-border/30 transition-colors relative
                         ${isToday ? "bg-accent-cyan/10" : isCurrentMonth ? "hover:bg-white/[0.02]" : "opacity-30 bg-black/20"}
                       `}
                     >
-                      <div className={`text-sm font-bold mb-2 ${isToday ? "text-accent-cyan" : "text-white/80"}`}>{d.getDate()}</div>
-                      <div className="flex flex-col gap-1">
-                        {daySessions.slice(0, 3).map(s => (
+                      <div className={`text-xs sm:text-sm font-bold mb-1 sm:mb-2 ${isToday ? "text-accent-cyan" : "text-white/80"}`}>{d.getDate()}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {daySessions.map(s => (
                           <div 
                             key={s.id} 
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-semibold text-white truncate cursor-pointer hover:brightness-110 ${s.isCancelled ? 'opacity-50 line-through' : ''}`}
-                            style={{ backgroundColor: `${s.room.color}44`, borderLeft: `2px solid ${s.room.color}` }}
+                            className={`w-1.5 h-1.5 sm:w-auto sm:h-auto sm:px-1.5 sm:py-0.5 rounded-full sm:rounded text-[10px] font-semibold text-white truncate cursor-pointer hover:brightness-110 ${s.isCancelled ? 'opacity-50 line-through' : ''}`}
+                            style={{ 
+                              backgroundColor: s.room.color,
+                              borderLeft: 'none'
+                            }}
+                            title={s.project.title}
                             onClick={(e) => handleSessionClick(e, s)}
                           >
-                            {s.project.title}
+                            <span className="hidden sm:inline">{s.project.title}</span>
                           </div>
                         ))}
-                        {daySessions.length > 3 && <div className="text-[10px] font-bold text-text-secondary pl-1">+{daySessions.length - 3} more</div>}
                       </div>
                     </div>
                   );
