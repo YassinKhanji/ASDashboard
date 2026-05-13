@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard,
@@ -38,6 +38,7 @@ const navItems = [
 
 export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -145,8 +146,9 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         </div>
       </header>
 
+      {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[350px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-2 !bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
             <div className="flex items-center gap-2 relative">
@@ -172,7 +174,12 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                   <Link 
                     key={n.id} 
                     href={n.link || "#"} 
-                    onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                    onClick={(e) => { 
+                      e.preventDefault();
+                      markAsRead(n.id); 
+                      setShowNotifications(false); 
+                      if (n.link) router.push(n.link);
+                    }} 
                     className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${n.isRead ? 'bg-white/5 text-white/30' : 'bg-accent-cyan/15 text-accent-cyan shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}>
@@ -414,8 +421,9 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent-yellow" />}
           </button>
 
+          {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[350px] glass-card p-0 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 !bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] glass-card p-0 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
               <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
                 <div className="flex items-center gap-2 relative">
@@ -441,7 +449,12 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                       <Link 
                         key={n.id} 
                         href={n.link || "#"} 
-                        onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                        onClick={(e) => { 
+                          e.preventDefault();
+                          markAsRead(n.id); 
+                          setShowNotifications(false); 
+                          if (n.link) router.push(n.link);
+                        }} 
                         className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${n.isRead ? 'bg-white/5 text-white/30' : 'bg-accent-cyan/15 text-accent-cyan shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}>

@@ -123,7 +123,7 @@ export default function ProjectDetailPage() {
               <span className={`glass-badge ${getStatusColor(project.status)}`}>{PROJECT_STATUS_LABELS[project.status as keyof typeof PROJECT_STATUS_LABELS]}</span>
               <span className="glass-badge badge-white">{PROJECT_TYPE_LABELS[project.type as keyof typeof PROJECT_TYPE_LABELS]}</span>
             </div>
-            <p className="text-text-secondary text-sm">Created by {project.createdBy.name} · {formatDate(project.createdAt)}</p>
+            <p className="text-text-secondary text-sm">Created by {project.createdBy?.name || "Unknown"} · {formatDate(project.createdAt)}</p>
           </div>
           
           <div className="flex flex-wrap gap-3 shrink-0">
@@ -380,7 +380,7 @@ export default function ProjectDetailPage() {
                         </span>
                         <span className="text-xs text-text-secondary">{formatDateTime(a.createdAt)}</span>
                       </div>
-                      <div className="text-xs text-text-secondary/80 mb-2">by <span className="font-medium text-white/90">{a.reviewer.name}</span></div>
+                      <div className="text-xs text-text-secondary/80 mb-2">by <span className="font-medium text-white/90">{a.reviewer?.name || "Unknown"}</span></div>
                       {a.notes && <p className="text-sm text-white/80 bg-black/20 p-3 rounded-xl">{a.notes}</p>}
                     </div>
                   );
