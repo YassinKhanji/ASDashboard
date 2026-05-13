@@ -1,8 +1,13 @@
 "use client";
 
 import React from "react";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // SessionProvider removed as authentication is mocked
-  return <>{children}</>;
+  return (
+    <LanguageProvider>
+      {children}
+    </LanguageProvider>
+  );
 }

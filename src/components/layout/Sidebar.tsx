@@ -16,8 +16,10 @@ import {
   X,
   Search,
   Bell,
+  Globe,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface SidebarProps {
   user: any;
@@ -26,17 +28,17 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Overview", tooltip: "Overview" },
-  { href: "/projets", icon: FolderKanban, label: "Projects", tooltip: "Projects" },
-  { href: "/etudiants", icon: Users, label: "Students", tooltip: "Students" },
-  { href: "/personnel", icon: UserCog, label: "Staff", tooltip: "Staff" },
-  { href: "/calendrier", icon: CalendarDays, label: "Calendar", tooltip: "Calendar" },
-  { href: "/discussions", icon: MessageSquare, label: "Discussions", tooltip: "Discussions" },
-  { href: "/revue", icon: ClipboardCheck, label: "Governance", tooltip: "Governance" },
-  { href: "/parametres", icon: Settings, label: "Settings", tooltip: "Settings" },
+  { href: "/", icon: LayoutDashboard, label: "overview" },
+  { href: "/projets", icon: FolderKanban, label: "projects" },
+  { href: "/etudiants", icon: Users, label: "students" },
+  { href: "/personnel", icon: UserCog, label: "staff" },
+  { href: "/calendrier", icon: CalendarDays, label: "calendar" },
+  { href: "/discussions", icon: MessageSquare, label: "discussions" },
+  { href: "/revue", icon: ClipboardCheck, label: "governance" },
+  { href: "/parametres", icon: Settings, label: "settings" },
 ];
 
-export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
+  const { language, setLanguage, t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -170,6 +172,12 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 text-white text-xs font-bold border border-white/20 transition-all active:scale-95"
+          >
+            {language.toUpperCase()}
+          </button>
+          <button 
             ref={mobileBellButtonRef}
             className="p-2 relative text-white/70 hover:text-white transition-colors"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -188,14 +196,14 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
       {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={mobileNotificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 glass-card !p-0 !rounded-[32px] flex flex-col">
+        <div ref={mobileNotificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[320px] overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-4 zoom-in-95 duration-200 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
           <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
             <div className="flex items-center gap-2 relative">
               <Bell size={18} className="text-accent-cyan animate-pulse" />
-              <span className="tracking-tight text-lg">Notifications</span>
+              <span className="tracking-tight text-lg">{t('notifications')}</span>
             </div>
-            {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} NEW</span>}
+            {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} {t('new_notif_count')}</span>}
           </div>
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {notifications.length === 0 ? (
@@ -203,7 +211,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                   <Bell size={32} className="text-white/20" />
                 </div>
-                <div className="text-sm text-white/40 font-medium">Your inbox is empty</div>
+                <div className="text-sm text-white/40 font-medium">{t('no_notifications')}</div>
               </div>
             ) : (
               notifications.map(n => {
@@ -236,7 +244,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
           </div>
           {notifications.length > 0 && (
             <div className="p-3 bg-white/5 border-t border-white/10 text-center">
-              <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all</button>
+              <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">{t('clear_all')}</button>
             </div>
           )}
         </div>
@@ -264,7 +272,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                   }`}
                 >
                   <item.icon size={20} strokeWidth={active ? 2.5 : 2} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-sm font-medium">{t(item.label)}</span>
                 </Link>
               );
             })}
@@ -388,7 +396,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
             <input
               type="search"
-              placeholder="Search..."
+              placeholder={t('search_placeholder')}
               className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-accent-cyan transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -428,8 +436,8 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                 }`}
               >
                 <item.icon size={18} strokeWidth={active ? 2.5 : 2} />
-                <span className="text-sm flex-1">{item.label}</span>
-                {item.label === "Governance" && pendingReviews > 0 && (
+                <span className="text-sm flex-1">{t(item.label)}</span>
+                {item.label === "governance" && pendingReviews > 0 && (
                   <span className="w-5 h-5 rounded-full bg-accent-yellow text-background text-[10px] font-bold flex items-center justify-center shadow-lg animate-pulse">
                     {pendingReviews}
                   </span>
@@ -446,9 +454,17 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-white truncate">{user?.name || "User"}</span>
-              <span className="text-[10px] text-white/50 truncate">{user?.role || "Admin"}</span>
+              <span className="text-[10px] text-white/50 truncate">{user?.role || t('user_role_admin')}</span>
             </div>
           </div>
+
+          <button 
+            onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold border border-white/10 transition-all shrink-0"
+            title="Switch Language"
+          >
+            {language.toUpperCase()}
+          </button>
           
           <button 
             ref={bellButtonRef}
@@ -461,14 +477,14 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={desktopNotificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 glass-card !p-0 !rounded-[32px] flex flex-col">
+            <div ref={desktopNotificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[320px] overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200 bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-[32px] flex flex-col">
               <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
                 <div className="flex items-center gap-2 relative">
                   <Bell size={18} className="text-accent-cyan animate-pulse" />
-                  <span className="tracking-tight text-lg">Notifications</span>
+                  <span className="tracking-tight text-lg">{t('notifications')}</span>
                 </div>
-                {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} NEW</span>}
+                {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} {t('new_notif_count')}</span>}
               </div>
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                 {notifications.length === 0 ? (
@@ -476,7 +492,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                       <Bell size={32} className="text-white/20" />
                     </div>
-                    <div className="text-sm text-white/40 font-medium">Your inbox is empty</div>
+                    <div className="text-sm text-white/40 font-medium">{t('no_notifications')}</div>
                   </div>
                 ) : (
                   notifications.map(n => {
@@ -509,7 +525,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
               </div>
               {notifications.length > 0 && (
                 <div className="p-3 bg-white/5 border-t border-white/10 text-center">
-                  <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all notifications</button>
+                  <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">{t('clear_all')}</button>
                 </div>
               )}
             </div>
