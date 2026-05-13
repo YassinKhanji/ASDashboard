@@ -49,6 +49,18 @@ const translations: Record<Language, Record<string, string>> = {
     edit: "Edit",
     delete: "Delete",
     loading: "Loading...",
+    
+    // Dashboard Specific
+    enrollments_activity: "Enrollments (Activity)",
+    project_breakdown: "Project Breakdown",
+    recent_projects: "Recent Projects",
+    upcoming_sessions: "Upcoming Sessions",
+    view_all: "View all",
+    week: "Week",
+    month: "Month",
+    year: "Year",
+    total: "Total",
+    review: "Review",
   },
   fr: {
     // Sidebar
@@ -86,6 +98,18 @@ const translations: Record<Language, Record<string, string>> = {
     edit: "Modifier",
     delete: "Supprimer",
     loading: "Chargement...",
+    
+    // Dashboard Specific
+    enrollments_activity: "Inscriptions (Activité)",
+    project_breakdown: "Répartition des Projets",
+    recent_projects: "Projets Récents",
+    upcoming_sessions: "Sessions à Venir",
+    view_all: "Tout voir",
+    week: "Semaine",
+    month: "Mois",
+    year: "Année",
+    total: "Total",
+    review: "Revue",
   },
 };
 

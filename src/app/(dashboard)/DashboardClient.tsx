@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { Users, UserCog, ClipboardCheck, Circle, Check, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatTime, PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DashboardClient({ stats, activityData, upcomingSessions, recentProjects, userRole, currentRange }: any) {
+  const { t } = useLanguage();
   const router = useRouter();
   const activePercent = stats.projectCount > 0 ? Math.round((stats.activeProjectCount / stats.projectCount) * 100) : 0;
   const pendingPercent = stats.projectCount > 0 ? Math.round((stats.pendingReviewCount / stats.projectCount) * 100) : 0;
@@ -25,16 +27,16 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         {/* Left Column (Activity) */}
         <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
-            <h2 className="text-sm font-bold">Enrollments (Activity)</h2>
+            <h2 className="text-sm font-bold">{t('enrollments_activity')}</h2>
             <div className="relative group">
               <select 
-                className="appearance-none bg-white/5 border border-white/10 rounded-lg pl-2 pr-6 py-1 text-[10px] text-white/60 font-bold hover:text-white hover:bg-white/10 transition-colors cursor-pointer outline-none focus:border-accent-cyan/50"
+                className="appearance-none bg-[#1a2f3a] border border-white/10 rounded-lg pl-2 pr-6 py-1 text-[10px] text-white/60 font-bold hover:text-white hover:bg-white/10 transition-colors cursor-pointer outline-none focus:border-accent-cyan/50 color-scheme-dark"
                 value={currentRange || "week"}
                 onChange={(e) => router.push(`/?range=${e.target.value}`)}
               >
-                <option value="week">Week</option>
-                <option value="month">Month</option>
-                <option value="year">Year</option>
+                <option value="week" className="bg-[#1a2f3a] text-white">{t('week')}</option>
+                <option value="month" className="bg-[#1a2f3a] text-white">{t('month')}</option>
+                <option value="year" className="bg-[#1a2f3a] text-white">{t('year')}</option>
               </select>
               <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
             </div>
@@ -66,7 +68,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
             </div>
             <div>
               <div className="text-xl font-black leading-tight">{stats.studentCount}</div>
-              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Students</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">{t('students')}</div>
             </div>
           </Link>
           <Link href="/personnel" className="flex-1 bg-white/5 rounded-[20px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
@@ -75,7 +77,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
             </div>
             <div>
               <div className="text-xl font-black leading-tight">{stats.staffCount}</div>
-              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Staff</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">{t('staff')}</div>
             </div>
           </Link>
           <Link href="/revue" className="flex-1 bg-white/5 rounded-[20px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
@@ -84,7 +86,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
             </div>
             <div>
               <div className="text-xl font-black leading-tight">{stats.pendingReviewCount}</div>
-              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Review</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">{t('review')}</div>
             </div>
           </Link>
         </div>
@@ -92,8 +94,8 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         {/* Right Column (Overview) */}
         <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-[220px] md:h-full flex flex-col">
           <div className="flex justify-between items-center mb-1 shrink-0">
-            <h2 className="text-sm font-bold">Project Breakdown</h2>
-            <div className="text-[10px] text-white/60 font-bold">{stats.projectCount} Total</div>
+            <h2 className="text-sm font-bold">{t('project_breakdown')}</h2>
+            <div className="text-[10px] text-white/60 font-bold">{stats.projectCount} {t('total')}</div>
           </div>
           
           <div className="flex-1 flex items-center justify-center relative min-h-0">
@@ -135,8 +137,8 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         {/* Recent Projects (Like Challenges) */}
         <div className="col-span-1 md:col-span-8 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col h-[200px] md:h-full">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-sm font-bold">Recent Projects</h2>
-            <Link href="/projets" className="text-[10px] text-white/60 hover:text-white flex items-center gap-1">View all <ArrowRight size={10}/></Link>
+            <h2 className="text-sm font-bold">{t('recent_projects')}</h2>
+            <Link href="/projets" className="text-[10px] text-white/60 hover:text-white flex items-center gap-1">{t('view_all')} <ArrowRight size={10}/></Link>
           </div>
           <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {recentProjects.slice(0, 3).map((p: any) => {
@@ -174,7 +176,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 h-[200px] md:h-full flex flex-col">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-bold flex items-center gap-1.5">
-              Upcoming Sessions
+              {t('upcoming_sessions')}
             </h2>
             <Link href="/calendrier" className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20">
               <CalendarDays size={10} />
