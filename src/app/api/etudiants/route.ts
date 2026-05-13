@@ -31,5 +31,22 @@ export async function POST(req: Request) {
       flags: body.flags,
     },
   });
+
+  // Notify admins of new student
+  const admins = await prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "COMMITTEE"] }, isActive: true },
+  });
+  
+  if (admins.length > 0) {
+    await prisma.notification.createMany({
+      data: admins.map(admin => ({
+        userId: admin.id,
+        title: "New student registered",
+        content: `${student.firstName} ${student.lastName} has been added to the database.`,
+        link: "/etudiants",
+      })),
+    });
+  }
+
   return NextResponse.json(student, { status: 201 });
 }

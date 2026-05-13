@@ -145,41 +145,55 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         </div>
       </header>
 
-      {/* Mobile Notifications Dropdown */}
       {showNotifications && (
-        <div ref={notificationsRef} className="fixed top-16 right-4 w-[300px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in !bg-[#1a2f3a]/80 backdrop-blur-xl border border-white/20 shadow-2xl">
-          <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5">
-            <div className="flex items-center gap-2">
-              <Bell size={16} className="text-accent-cyan" />
-              <span>Notifications</span>
+        <div ref={notificationsRef} className="fixed top-20 right-4 w-[calc(100%-32px)] sm:w-[350px] glass-card p-0 overflow-hidden z-50 md:hidden animate-in fade-in slide-in-from-top-2 !bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
+            <div className="flex items-center gap-2 relative">
+              <Bell size={18} className="text-accent-cyan animate-pulse" />
+              <span className="tracking-tight text-lg">Notifications</span>
             </div>
-            {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2 !py-0.5 !text-[10px]">{unreadCount} new</span>}
+            {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} NEW</span>}
           </div>
-          <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center flex flex-col items-center gap-2">
-                <Bell size={32} className="text-white/10" />
-                <div className="text-xs text-white/30">No notifications yet</div>
+              <div className="p-12 text-center flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                  <Bell size={32} className="text-white/20" />
+                </div>
+                <div className="text-sm text-white/40 font-medium">Your inbox is empty</div>
               </div>
             ) : (
-              notifications.map(n => (
-                <Link 
-                  key={n.id} 
-                  href={n.link || "#"} 
-                  onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
-                  className={`flex items-start gap-3 p-4 border-b border-white/5 transition-all hover:bg-white/5 ${n.isRead ? 'opacity-60' : 'bg-accent-cyan/5'}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.isRead ? 'bg-white/10 text-white/40' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
-                    <Bell size={14} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm mb-0.5 ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
-                    <div className="text-[10px] text-white/40 line-clamp-2 leading-relaxed">{n.content}</div>
-                  </div>
-                </Link>
-              ))
+              notifications.map(n => {
+                const Icon = n.title.toLowerCase().includes('project') ? FolderKanban : 
+                             n.title.toLowerCase().includes('student') ? Users : 
+                             n.title.toLowerCase().includes('message') ? MessageSquare : Bell;
+                return (
+                  <Link 
+                    key={n.id} 
+                    href={n.link || "#"} 
+                    onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                    className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${n.isRead ? 'bg-white/5 text-white/30' : 'bg-accent-cyan/15 text-accent-cyan shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}>
+                      <Icon size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm mb-1 leading-tight ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
+                      <div className="text-xs text-white/40 line-clamp-2 leading-relaxed group-hover:text-white/60 transition-colors">{n.content}</div>
+                      <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{formatDateTime(n.createdAt)}</div>
+                    </div>
+                    {!n.isRead && <div className="w-2 h-2 rounded-full bg-accent-cyan mt-1.5 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />}
+                  </Link>
+                );
+              })
             )}
           </div>
+          {notifications.length > 0 && (
+            <div className="p-3 bg-white/5 border-t border-white/10 text-center">
+              <button className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -400,41 +414,55 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent-yellow" />}
           </button>
 
-          {/* Notifications Dropdown */}
           {showNotifications && (
-            <div ref={notificationsRef} className="absolute bottom-[calc(100%+10px)] left-0 w-[300px] glass-card p-0 overflow-hidden z-50 !bg-[#1a2f3a]/80 backdrop-blur-xl border border-white/20 shadow-2xl">
-              <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5">
-                <div className="flex items-center gap-2">
-                  <Bell size={16} className="text-accent-cyan" />
-                  <span>Notifications</span>
+            <div ref={notificationsRef} className="absolute bottom-[calc(100%+12px)] left-0 w-[350px] glass-card p-0 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 !bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+              <div className="p-4 border-b border-white/10 font-bold text-white flex justify-between items-center bg-white/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 to-transparent pointer-events-none" />
+                <div className="flex items-center gap-2 relative">
+                  <Bell size={18} className="text-accent-cyan animate-pulse" />
+                  <span className="tracking-tight text-lg">Notifications</span>
                 </div>
-                {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2 !py-0.5 !text-[10px]">{unreadCount} new</span>}
+                {unreadCount > 0 && <span className="glass-badge badge-cyan !px-2.5 !py-1 !text-[11px] font-bold shadow-lg ring-1 ring-white/20">{unreadCount} NEW</span>}
               </div>
-              <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                 {notifications.length === 0 ? (
-                  <div className="p-8 text-center flex flex-col items-center gap-2">
-                    <Bell size={32} className="text-white/10" />
-                    <div className="text-xs text-white/30">No notifications yet</div>
+                  <div className="p-12 text-center flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                      <Bell size={32} className="text-white/20" />
+                    </div>
+                    <div className="text-sm text-white/40 font-medium">Your inbox is empty</div>
                   </div>
                 ) : (
-                  notifications.map(n => (
-                    <Link 
-                      key={n.id} 
-                      href={n.link || "#"} 
-                      onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
-                      className={`flex items-start gap-3 p-4 border-b border-white/5 transition-all hover:bg-white/5 ${n.isRead ? 'opacity-60' : 'bg-accent-cyan/5'}`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.isRead ? 'bg-white/10 text-white/40' : 'bg-accent-cyan/20 text-accent-cyan'}`}>
-                        <Bell size={14} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm mb-0.5 ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
-                        <div className="text-[10px] text-white/40 line-clamp-2 leading-relaxed">{n.content}</div>
-                      </div>
-                    </Link>
-                  ))
+                  notifications.map(n => {
+                    const Icon = n.title.toLowerCase().includes('project') ? FolderKanban : 
+                                 n.title.toLowerCase().includes('student') ? Users : 
+                                 n.title.toLowerCase().includes('message') ? MessageSquare : Bell;
+                    return (
+                      <Link 
+                        key={n.id} 
+                        href={n.link || "#"} 
+                        onClick={() => { markAsRead(n.id); setShowNotifications(false); }} 
+                        className={`flex items-start gap-4 p-4 border-b border-white/5 transition-all hover:bg-white/10 group ${n.isRead ? 'opacity-50' : 'bg-white/[0.02]'}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${n.isRead ? 'bg-white/5 text-white/30' : 'bg-accent-cyan/15 text-accent-cyan shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-sm mb-1 leading-tight ${n.isRead ? 'text-white/70' : 'text-white font-bold'}`}>{n.title}</div>
+                          <div className="text-xs text-white/40 line-clamp-2 leading-relaxed group-hover:text-white/60 transition-colors">{n.content}</div>
+                          <div className="text-[10px] text-accent-cyan/40 mt-2 font-bold uppercase tracking-widest">{formatDateTime(n.createdAt)}</div>
+                        </div>
+                        {!n.isRead && <div className="w-2 h-2 rounded-full bg-accent-cyan mt-1.5 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />}
+                      </Link>
+                    );
+                  })
                 )}
               </div>
+              {notifications.length > 0 && (
+                <div className="p-3 bg-white/5 border-t border-white/10 text-center">
+                  <button className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all notifications</button>
+                </div>
+              )}
             </div>
           )}
         </div>
