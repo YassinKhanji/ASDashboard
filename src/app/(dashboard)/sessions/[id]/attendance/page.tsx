@@ -150,60 +150,71 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      <div className="glass-card p-0 overflow-hidden">
+      {/* Attendance Header Bar */}
+      <div className="glass-card p-0 overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
-              <tr className="border-b border-glass-border/50 bg-white/5">
-                <th className="px-6 py-4 label-subtle">Student</th>
+              <tr className="bg-white/5">
+                <th className="px-6 py-4 label-subtle w-1/3">Student</th>
                 <th className="px-6 py-4 label-subtle text-center">{t('present')}</th>
                 <th className="px-6 py-4 label-subtle text-center">{t('absent')}</th>
                 <th className="px-6 py-4 label-subtle text-center">{t('late')}</th>
                 <th className="px-6 py-4 label-subtle text-center">{t('excused')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-glass-border/30">
-              {records.map((record) => (
-                <tr key={record.studentId} className="hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-white">{record.firstName} {record.lastName}</div>
-                    <div className="text-[10px] text-text-secondary uppercase tracking-wider mt-0.5">Enrolled Student</div>
-                  </td>
-                  
-                  {(["PRESENT", "ABSENT", "LATE", "EXCUSED"] as const).map((status) => {
-                    const isActive = record.attendance?.status === status || (!record.attendance && status === "PRESENT");
-                    return (
-                      <td key={status} className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => updateStatus(record.studentId, status)}
-                          className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center mx-auto
-                            ${isActive 
-                              ? status === "PRESENT" ? "bg-[#a8e063]/20 border-[#a8e063]/40 text-[#a8e063]" :
-                                status === "ABSENT" ? "bg-red-500/20 border-red-500/40 text-red-400" :
-                                status === "LATE" ? "bg-[#f5c518]/20 border-[#f5c518]/40 text-[#f5c518]" :
-                                "bg-[#4db8ff]/20 border-[#4db8ff]/40 text-[#4db8ff]"
-                              : "bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white/40"
-                            }
-                          `}
-                        >
-                          {getStatusIcon(status)}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
           </table>
         </div>
       </div>
-      
-      {records.length === 0 && (
-        <div className="glass-card text-center py-12">
-          <UserCheck size={32} className="mx-auto text-text-secondary/50 mb-3" />
-          <p className="text-text-secondary italic">No students enrolled in this project.</p>
-        </div>
-      )}
+
+      {/* Attendance List / Content */}
+      <div className="glass-card p-0 overflow-hidden min-h-[300px] flex flex-col">
+        {records.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <tbody className="divide-y divide-glass-border/30">
+                {records.map((record) => (
+                  <tr key={record.studentId} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-6 py-5 w-1/3">
+                      <div className="font-bold text-white">{record.firstName} {record.lastName}</div>
+                      <div className="text-[10px] text-text-secondary uppercase tracking-wider mt-1">Enrolled Student</div>
+                    </td>
+                    
+                    {(["PRESENT", "ABSENT", "LATE", "EXCUSED"] as const).map((status) => {
+                      const isActive = record.attendance?.status === status || (!record.attendance && status === "PRESENT");
+                      return (
+                        <td key={status} className="px-6 py-5 text-center">
+                          <button
+                            onClick={() => updateStatus(record.studentId, status)}
+                            className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center mx-auto
+                              ${isActive 
+                                ? status === "PRESENT" ? "bg-[#a8e063]/20 border-[#a8e063]/40 text-[#a8e063]" :
+                                  status === "ABSENT" ? "bg-red-500/20 border-red-500/40 text-red-400" :
+                                  status === "LATE" ? "bg-[#f5c518]/20 border-[#f5c518]/40 text-[#f5c518]" :
+                                  "bg-[#4db8ff]/20 border-[#4db8ff]/40 text-[#4db8ff]"
+                                : "bg-white/5 border-white/5 text-white/20 hover:border-white/20 hover:text-white/40"
+                              }
+                            `}
+                          >
+                            {getStatusIcon(status)}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
+            <div className="p-4 rounded-3xl bg-white/5 mb-4">
+              <UserCheck size={40} className="text-text-secondary/40" />
+            </div>
+            <p className="text-text-secondary italic">No students enrolled in this project.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
