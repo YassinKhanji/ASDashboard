@@ -20,7 +20,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
       </header>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-none md:h-[320px] min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-none md:h-[260px] min-h-0">
         
         {/* Left Column (Activity) */}
         <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
@@ -59,45 +59,45 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         </div>
 
         {/* Middle Column (Small stats) */}
-        <div className="col-span-1 md:col-span-3 flex flex-col gap-4 h-auto md:h-full">
-          <Link href="/etudiants" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-cyan/20 transition-colors">
-              <Users size={20} className="text-[#4db8ff]" />
+        <div className="col-span-1 md:col-span-3 flex flex-col gap-2 h-auto md:h-full">
+          <Link href="/etudiants" className="flex-1 bg-white/5 rounded-[20px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-cyan/20 transition-colors">
+              <Users size={16} className="text-[#4db8ff]" />
             </div>
             <div>
-              <div className="text-2xl font-black">{stats.studentCount}</div>
-              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Students</div>
+              <div className="text-xl font-black leading-tight">{stats.studentCount}</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Students</div>
             </div>
           </Link>
-          <Link href="/personnel" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-yellow/20 transition-colors">
-              <UserCog size={20} className="text-[#f5c518]" />
+          <Link href="/personnel" className="flex-1 bg-white/5 rounded-[20px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-yellow/20 transition-colors">
+              <UserCog size={16} className="text-[#f5c518]" />
             </div>
             <div>
-              <div className="text-2xl font-black">{stats.staffCount}</div>
-              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Staff</div>
+              <div className="text-xl font-black leading-tight">{stats.staffCount}</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Staff</div>
             </div>
           </Link>
-          <Link href="/revue" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-lime/20 transition-colors">
-              <ClipboardCheck size={20} className="text-[#a8e063]" />
+          <Link href="/revue" className="flex-1 bg-white/5 rounded-[20px] p-3 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-lime/20 transition-colors">
+              <ClipboardCheck size={16} className="text-[#a8e063]" />
             </div>
             <div>
-              <div className="text-2xl font-black">{stats.pendingReviewCount}</div>
-              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Review</div>
+              <div className="text-xl font-black leading-tight">{stats.pendingReviewCount}</div>
+              <div className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Review</div>
             </div>
           </Link>
         </div>
 
         {/* Right Column (Overview) */}
         <div className="col-span-1 md:col-span-4 bg-white/5 rounded-[24px] p-4 border border-white/10 relative h-[220px] md:h-full flex flex-col">
-          <div className="flex justify-between items-center mb-2 shrink-0">
+          <div className="flex justify-between items-center mb-1 shrink-0">
             <h2 className="text-sm font-bold">Project Breakdown</h2>
             <div className="text-[10px] text-white/60 font-bold">{stats.projectCount} Total</div>
           </div>
           
           <div className="flex-1 flex items-center justify-center relative min-h-0">
-            <svg className="h-full max-h-[100px] md:max-h-[120px] aspect-square transform -rotate-90" viewBox="0 0 100 100">
+            <svg className="h-full max-h-[80px] md:max-h-[90px] aspect-square transform -rotate-90" viewBox="0 0 100 100">
               {/* Background (Gray) */}
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="12" fill="none" />
               {/* Pending (Cyan) */}
@@ -106,23 +106,23 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
               <circle cx="50" cy="50" r="40" stroke="#f5c518" strokeWidth="12" fill="none" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * activePercent) / 100} strokeLinecap="round" className="origin-center -rotate-90" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-extrabold">{activePercent}%</span>
-              <span className="text-[8px] text-white/60 uppercase font-bold tracking-wider">Active</span>
+              <span className="text-lg font-black">{activePercent}%</span>
+              <span className="text-[7px] text-white/60 uppercase font-bold tracking-wider">Active</span>
             </div>
             
             {/* Legend overlays */}
-            <div className="absolute right-0 top-0 flex flex-col gap-2 text-[10px] font-medium bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
+            <div className="absolute right-0 top-0 flex flex-col gap-1.5 text-[9px] font-medium bg-black/20 p-2 rounded-xl border border-white/10 backdrop-blur-md">
               <div>
                 <div className="flex items-center gap-1.5 text-white/60 mb-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#f5c518]" /> Active
+                  <div className="w-1 h-1 rounded-full bg-[#f5c518]" /> Active
                 </div>
-                <div className="font-bold ml-3">{stats.activeProjectCount}</div>
+                <div className="font-bold ml-2.5">{stats.activeProjectCount}</div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-white/60 mb-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#4db8ff]" /> Pending
+                  <div className="w-1 h-1 rounded-full bg-[#4db8ff]" /> Pending
                 </div>
-                <div className="font-bold ml-3">{stats.pendingReviewCount}</div>
+                <div className="font-bold ml-2.5">{stats.pendingReviewCount}</div>
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4 shrink-0 h-auto md:h-[170px]">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4 flex-1 min-h-0">
         
         {/* Recent Projects (Like Challenges) */}
         <div className="col-span-1 md:col-span-8 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col h-[200px] md:h-full">
