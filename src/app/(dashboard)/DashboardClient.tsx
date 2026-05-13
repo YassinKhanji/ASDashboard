@@ -48,34 +48,34 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         </div>
 
         {/* Middle Column (Small stats) */}
-        <div className="col-span-1 md:col-span-3 flex flex-col gap-3 h-auto md:h-full">
-          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <Users size={16} className="text-[#4db8ff]" />
+        <div className="col-span-1 md:col-span-3 flex flex-col gap-4 h-auto md:h-full">
+          <Link href="/etudiants" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-cyan/20 transition-colors">
+              <Users size={20} className="text-[#4db8ff]" />
             </div>
             <div>
-              <div className="text-lg font-bold">{stats.studentCount}</div>
-              <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">Students</div>
+              <div className="text-2xl font-black">{stats.studentCount}</div>
+              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Students</div>
             </div>
-          </div>
-          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <UserCog size={16} className="text-[#f5c518]" />
-            </div>
-            <div>
-              <div className="text-lg font-bold">{stats.staffCount}</div>
-              <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">Staff</div>
-            </div>
-          </div>
-          <div className="bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <ClipboardCheck size={16} className="text-[#a8e063]" />
+          </Link>
+          <Link href="/personnel" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-yellow/20 transition-colors">
+              <UserCog size={20} className="text-[#f5c518]" />
             </div>
             <div>
-              <div className="text-lg font-bold">{stats.pendingReviewCount}</div>
-              <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">Review</div>
+              <div className="text-2xl font-black">{stats.staffCount}</div>
+              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Staff</div>
             </div>
-          </div>
+          </Link>
+          <Link href="/revue" className="flex-1 bg-white/5 rounded-[24px] p-4 border border-white/10 flex items-center gap-4 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent-lime/20 transition-colors">
+              <ClipboardCheck size={20} className="text-[#a8e063]" />
+            </div>
+            <div>
+              <div className="text-2xl font-black">{stats.pendingReviewCount}</div>
+              <div className="text-[11px] text-white/50 font-bold uppercase tracking-wider mt-0.5">Review</div>
+            </div>
+          </Link>
         </div>
 
         {/* Right Column (Overview) */}

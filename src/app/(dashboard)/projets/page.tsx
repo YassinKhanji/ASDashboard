@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Plus, FolderKanban, MoreHorizontal, ArrowRight, Edit3, Trash2, Eye } from "lucide-react";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS, formatDate } from "@/lib/utils";
@@ -195,35 +196,64 @@ export default function ProjetsPage() {
 
 function ProjectActions({ project, onDelete }: { project: Project, onDelete: (id: string, title: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) && 
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", () => setIsOpen(false), { once: true });
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isOpen]);
 
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 8,
+        left: rect.right - 192, // w-48 is 192px
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div className="relative inline-block" ref={menuRef}>
+    <div className="relative inline-block">
       <button 
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
+        ref={buttonRef}
+        onClick={toggleMenu}
         className="p-2 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors"
       >
         <MoreHorizontal size={18} />
       </button>
       
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 glass-card p-1.5 z-50 shadow-2xl animate-in fade-in zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/20">
+      {isOpen && mounted && createPortal(
+        <div 
+          ref={menuRef}
+          className="fixed w-48 glass-card p-1.5 z-[9999] shadow-2xl animate-in fade-in zoom-in-95 duration-200 !bg-[#1a2f3a]/95 backdrop-blur-xl border border-white/20"
+          style={{ 
+            top: `${coords.top}px`, 
+            left: `${coords.left}px` 
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <Link 
             href={`/projets/${project.id}`}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
@@ -250,7 +280,8 @@ function ProjectActions({ project, onDelete }: { project: Project, onDelete: (id
           >
             <Trash2 size={14} /> Delete Project
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
