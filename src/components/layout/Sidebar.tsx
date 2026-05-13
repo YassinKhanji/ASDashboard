@@ -117,6 +117,16 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
   }
 
+  async function clearAllNotifications() {
+    try {
+      await fetch('/api/notifications', { method: 'DELETE' });
+      setNotifications([]);
+      setShowNotifications(false);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <>
       {/* Mobile Top Bar */}
@@ -197,7 +207,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
           </div>
           {notifications.length > 0 && (
             <div className="p-3 bg-white/5 border-t border-white/10 text-center">
-              <button className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all</button>
+              <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all</button>
             </div>
           )}
         </div>
@@ -470,7 +480,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
               </div>
               {notifications.length > 0 && (
                 <div className="p-3 bg-white/5 border-t border-white/10 text-center">
-                  <button className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all notifications</button>
+                  <button onClick={clearAllNotifications} className="text-[11px] font-bold text-accent-cyan hover:text-white transition-colors uppercase tracking-widest">Clear all notifications</button>
                 </div>
               )}
             </div>

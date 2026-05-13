@@ -9,9 +9,23 @@ export async function GET() {
   }
 
   const notifications = await prisma.notification.findMany({
+    where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
     take: 20,
   });
 
   return NextResponse.json(notifications);
+}
+
+export async function DELETE() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await prisma.notification.deleteMany({
+    where: { userId: session.user.id },
+  });
+
+  return NextResponse.json({ ok: true });
 }
