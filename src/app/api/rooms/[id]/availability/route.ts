@@ -38,36 +38,11 @@ export async function GET(
   const rangeStart = new Date(startDate);
   const rangeEnd = new Date(endDate);
 
-  // 1. Get real Session records from approved/active projects in this room
-  const existingSessions = await prisma.session.findMany({
+  // Query ALL projects using this room (except rejected/archived and excluded)
+  const allProjects = await prisma.project.findMany({
     where: {
       roomId,
-      isCancelled: false,
-      ...(excludeProjectId ? { projectId: { not: excludeProjectId } } : {}),
-      startTime: { lte: rangeEnd },
-      endTime: { gte: rangeStart },
-      project: { status: { in: ["APPROVED", "ACTIVE"] } },
-    },
-    include: {
-      project: { select: { title: true } },
-    },
-  });
-
-  const bookedSlots: SlotInfo[] = existingSessions.map(s => {
-    const d = new Date(s.startTime);
-    return {
-      day: d.getDay(),
-      startMinutes: d.getHours() * 60 + d.getMinutes(),
-      endMinutes: new Date(s.endTime).getHours() * 60 + new Date(s.endTime).getMinutes(),
-      projectName: s.project.title,
-    };
-  });
-
-  // 2. Get "virtual" sessions from submitted/under-review projects via sessionPatternsJson
-  const pendingProjects = await prisma.project.findMany({
-    where: {
-      roomId,
-      status: { in: ["SUBMITTED", "UNDER_REVIEW"] },
+      status: { notIn: ["REJECTED", "ARCHIVED"] },
       ...(excludeProjectId ? { id: { not: excludeProjectId } } : {}),
       startDate: { not: null },
       endDate: { not: null },
@@ -76,15 +51,17 @@ export async function GET(
     select: {
       id: true,
       title: true,
+      status: true,
       startDate: true,
       endDate: true,
       sessionPatternsJson: true,
     },
   });
 
+  const bookedSlots: SlotInfo[] = [];
   const tentativeSlots: SlotInfo[] = [];
 
-  for (const project of pendingProjects) {
+  for (const project of allProjects) {
     if (!project.startDate || !project.endDate || !project.sessionPatternsJson) continue;
 
     let patterns: SessionPatternFull[] = [];
@@ -93,14 +70,21 @@ export async function GET(
     } catch { continue; }
 
     const expanded = expandAllPatterns(patterns, project.startDate, project.endDate);
+    const isConfirmed = ["APPROVED", "ACTIVE", "COMPLETED"].includes(project.status);
 
-    for (const session of expanded) {
-      tentativeSlots.push({
-        day: session.dayOfWeek,
-        startMinutes: session.startMinutes,
-        endMinutes: session.endMinutes,
+    for (const s of expanded) {
+      const slot: SlotInfo = {
+        day: s.dayOfWeek,
+        startMinutes: s.startMinutes,
+        endMinutes: s.endMinutes,
         projectName: project.title,
-      });
+      };
+
+      if (isConfirmed) {
+        bookedSlots.push(slot);
+      } else {
+        tentativeSlots.push(slot);
+      }
     }
   }
 
