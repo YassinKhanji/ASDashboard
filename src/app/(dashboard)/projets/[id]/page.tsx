@@ -103,7 +103,7 @@ export default function ProjectDetailPage() {
 
   const isOwner = session?.user?.id === project.createdById;
   const isReviewer = session?.user?.role === "ADMIN" || session?.user?.role === "COMMITTEE";
-  const canSubmit = isOwner && (project.status === "DRAFT" || project.status === "REJECTED");
+  const canSubmit = (isOwner || isReviewer) && (project.status === "DRAFT" || project.status === "REJECTED");
   const canReview = isReviewer && (project.status === "SUBMITTED" || project.status === "UNDER_REVIEW");
 
   const tabs = [

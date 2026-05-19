@@ -26,7 +26,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         {/* Left Column (Activity) */}
         <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
-            <h2 className="text-sm font-bold">Sessions (Next 7 Days)</h2>
+            <h2 className="text-sm font-bold">{t('sessions_next_7_days')}</h2>
           </div>
           <div className="flex-1 flex items-end justify-between gap-3 z-10 px-2 pt-2">
             {(activityData || []).map((day: any, i: number) => (

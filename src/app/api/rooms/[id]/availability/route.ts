@@ -38,7 +38,32 @@ export async function GET(
   const rangeStart = new Date(startDate);
   const rangeEnd = new Date(endDate);
 
-  // Query ALL projects using this room (except rejected/archived and excluded)
+  // 1. Get real Session records from approved/active projects in this room
+  const existingSessions = await prisma.session.findMany({
+    where: {
+      roomId,
+      isCancelled: false,
+      ...(excludeProjectId ? { projectId: { not: excludeProjectId } } : {}),
+      startTime: { lte: rangeEnd },
+      endTime: { gte: rangeStart },
+      project: { status: { in: ["APPROVED", "ACTIVE"] } },
+    },
+    include: {
+      project: { select: { title: true } },
+    },
+  });
+
+  const bookedSlots: SlotInfo[] = existingSessions.map(s => {
+    const d = new Date(s.startTime);
+    return {
+      day: d.getDay(),
+      startMinutes: d.getHours() * 60 + d.getMinutes(),
+      endMinutes: new Date(s.endTime).getHours() * 60 + new Date(s.endTime).getMinutes(),
+      projectName: s.project.title,
+    };
+  });
+
+  // 2. Query ALL projects using this room (except rejected/archived and excluded)
   const allProjects = await prisma.project.findMany({
     where: {
       roomId,
@@ -58,7 +83,6 @@ export async function GET(
     },
   });
 
-  const bookedSlots: SlotInfo[] = [];
   const tentativeSlots: SlotInfo[] = [];
 
   for (const project of allProjects) {

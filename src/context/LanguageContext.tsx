@@ -51,7 +51,7 @@ const translations: Record<Language, Record<string, string>> = {
     loading: "Loading...",
     
     // Dashboard Specific
-    enrollments_activity: "Enrollments (Activity)",
+    sessions_next_7_days: "Sessions (Next 7 Days)",
     project_breakdown: "Project Breakdown",
     recent_projects: "Recent Projects",
     upcoming_sessions: "Upcoming Sessions",
@@ -106,7 +106,7 @@ const translations: Record<Language, Record<string, string>> = {
     loading: "Chargement...",
     
     // Dashboard Specific
-    enrollments_activity: "Inscriptions (Activité)",
+    sessions_next_7_days: "Sessions (7 Prochains Jours)",
     project_breakdown: "Répartition des Projets",
     recent_projects: "Projets Récents",
     upcoming_sessions: "Sessions à Venir",
