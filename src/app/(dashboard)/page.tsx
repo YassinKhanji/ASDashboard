@@ -6,7 +6,9 @@ export const revalidate = 0;
 
 export default async function DashboardPage({ searchParams }: { searchParams: any }) {
   const range = searchParams?.range || "week";
-  const days = range === "month" ? 30 : range === "year" ? 365 : 7;
+  const now = new Date();
+  const sevenDaysLater = new Date(now);
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
 
   const [
     projectCount,
@@ -43,41 +45,44 @@ export default async function DashboardPage({ searchParams }: { searchParams: an
         _count: { select: { enrollments: true } },
       },
     }),
-    // Fetch recent enrollments to calculate activity for the selected range
-    prisma.enrollment.findMany({
+    // Fetch sessions for the next 7 days for the activity chart
+    prisma.session.findMany({
       where: {
-        enrolledAt: {
-          gte: new Date(new Date().setDate(new Date().getDate() - days)),
-        },
+        startTime: { gte: now, lte: sevenDaysLater },
+        isCancelled: false,
       },
       select: {
-        enrolledAt: true,
+        startTime: true,
       },
     }),
   ]);
 
-  // Process enrollments into daily counts for the last 7 days
-  const activityData = [
-    { label: "Sun", count: 0 },
-    { label: "Mon", count: 0 },
-    { label: "Tue", count: 0 },
-    { label: "Wed", count: 0 },
-    { label: "Thu", count: 0 },
-    { label: "Fri", count: 0 },
-    { label: "Sat", count: 0 },
-  ];
+  // Process sessions into daily counts for the next 7 days
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const next7Days: { label: string; dateLabel: string; count: number }[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    next7Days.push({
+      label: dayLabels[d.getDay()],
+      dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
+      count: 0,
+    });
+  }
 
-  recentEnrollments.forEach((e) => {
-    const day = e.enrolledAt.getDay(); // 0 is Sunday
-    activityData[day].count++;
+  recentEnrollments.forEach((s) => {
+    const sDate = new Date(s.startTime);
+    const sDateStr = `${sDate.getMonth() + 1}/${sDate.getDate()}`;
+    const match = next7Days.find(d => d.dateLabel === sDateStr);
+    if (match) match.count++;
   });
 
-  // Calculate percentage height based on max count (with a minimum max of 10 for visual scale)
-  const maxCount = Math.max(10, ...activityData.map(d => d.count));
-  const chartData = activityData.map(d => ({
+  const maxCount = Math.max(5, ...next7Days.map(d => d.count));
+  const chartData = next7Days.map(d => ({
     label: d.label,
+    dateLabel: d.dateLabel,
     val: d.count.toString(),
-    height: `${Math.max(5, Math.round((d.count / maxCount) * 100))}%`, // Min height 5% for visibility
+    height: `${Math.max(5, Math.round((d.count / maxCount) * 100))}%`,
   }));
 
   return (

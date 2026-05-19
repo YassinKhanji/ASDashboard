@@ -1,14 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Users, UserCog, ClipboardCheck, Circle, Check, ChevronDown, CalendarDays, ArrowRight } from "lucide-react";
+
+import { Users, UserCog, ClipboardCheck, Circle, Check, CalendarDays, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatTime, PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function DashboardClient({ stats, activityData, upcomingSessions, recentProjects, userRole, currentRange }: any) {
   const { t } = useLanguage();
-  const router = useRouter();
   const activePercent = stats.projectCount > 0 ? Math.round((stats.activeProjectCount / stats.projectCount) * 100) : 0;
   const pendingPercent = stats.projectCount > 0 ? Math.round((stats.pendingReviewCount / stats.projectCount) * 100) : 0;
 
@@ -27,19 +26,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
         {/* Left Column (Activity) */}
         <div className="col-span-1 md:col-span-5 bg-white/5 rounded-[24px] p-4 border border-white/10 flex flex-col relative overflow-hidden h-[220px] md:h-full">
           <div className="flex justify-between items-center mb-2 z-10 shrink-0">
-            <h2 className="text-sm font-bold">{t('enrollments_activity')}</h2>
-            <div className="relative group">
-              <select 
-                className="appearance-none bg-[#1a2f3a] border border-white/10 rounded-lg pl-2 pr-6 py-1 text-[10px] text-white/60 font-bold hover:text-white hover:bg-white/10 transition-colors cursor-pointer outline-none focus:border-accent-cyan/50 color-scheme-dark"
-                value={currentRange || "week"}
-                onChange={(e) => router.push(`/?range=${e.target.value}`)}
-              >
-                <option value="week" className="bg-[#1a2f3a] text-white">{t('week')}</option>
-                <option value="month" className="bg-[#1a2f3a] text-white">{t('month')}</option>
-                <option value="year" className="bg-[#1a2f3a] text-white">{t('year')}</option>
-              </select>
-              <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-            </div>
+            <h2 className="text-sm font-bold">Sessions (Next 7 Days)</h2>
           </div>
           <div className="flex-1 flex items-end justify-between gap-3 z-10 px-2 pt-2">
             {(activityData || []).map((day: any, i: number) => (
@@ -55,6 +42,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
                   </div>
                 </div>
                 <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider group-hover:text-accent-cyan transition-colors">{day.label}</span>
+                <span className="text-[8px] text-white/25 font-medium">{day.dateLabel}</span>
               </div>
             ))}
           </div>
@@ -178,7 +166,7 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
             <h2 className="text-sm font-bold flex items-center gap-1.5">
               {t('upcoming_sessions')}
             </h2>
-            <Link href="/calendrier" className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20">
+            <Link href="/calendrier" className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20" title="Open Calendar (Week View)">
               <CalendarDays size={10} />
             </Link>
           </div>
@@ -193,6 +181,8 @@ export default function DashboardClient({ stats, activityData, upcomingSessions,
                   <div className="min-w-0 flex-1">
                     <div className="text-[10px] font-bold truncate">{s.project?.title || "Session"}</div>
                     <div className="text-[9px] text-white/60 mt-0.5 flex items-center gap-1.5">
+                      <span className="text-accent-cyan/80 font-semibold">{new Date(s.startTime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+                      <span>•</span>
                       <span>{formatTime(s.startTime)}</span> • <span>{s.room?.name || "Room"}</span>
                     </div>
                   </div>

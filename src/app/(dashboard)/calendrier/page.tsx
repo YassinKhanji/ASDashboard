@@ -25,8 +25,8 @@ export default function CalendrierPage() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [rooms, setRooms] = useState<{ id: string; name: string; color: string }[]>([]);
   const { t } = useLanguage();
-  const [view, setView] = useState<ViewMode>("month");
-  const [currentDate, setCurrentDate] = useState(new Date("2026-01-01"));
+  const [view, setView] = useState<ViewMode>("week");
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [filterRoom, setFilterRoom] = useState("");
   const [loading, setLoading] = useState(true);
   
