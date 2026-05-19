@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Save, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Check, AlertTriangle, X } from "lucide-react";
 import SessionBuilder, { SessionPattern } from "@/components/ui/SessionBuilder";
 
 const STEPS = ["Basic Info", "Schedule", "Team", "Budget", "Marketing"];
@@ -21,6 +21,8 @@ export default function EditProjectPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [conflictBlock, setConflictBlock] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "", description: "", type: "COURSE",
     targetAgeGroup: "", language: "Arabic",
@@ -84,6 +86,43 @@ export default function EditProjectPage() {
 
   function updateField(field: string, value: unknown) {
     setForm(prev => ({ ...prev, [field]: value }));
+    if (validationErrors[field]) {
+      setValidationErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
+    }
+    if (errorBanner) setErrorBanner(null);
+  }
+
+  // ─── Validation ───────────────────────────────────────
+
+  function validateStep(step: number): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (step === 0) {
+      if (!form.title.trim()) errors.title = "Project title is required";
+    }
+    if (step === 1) {
+      if (!form.startDate) errors.startDate = "Start date is required";
+      if (!form.endDate) errors.endDate = "End date is required";
+      if (form.startDate && form.endDate && form.startDate > form.endDate) errors.endDate = "End date must be after start date";
+      if (!form.roomId) errors.roomId = "Please select a room";
+      const hasValidSession = form.sessionPatterns.some(s => s.days.length > 0 && s.startTime && s.endTime && s.startTime < s.endTime);
+      if (!hasValidSession) errors.sessionPatterns = "At least one session with a day and valid time range is required";
+    }
+    return errors;
+  }
+
+  function validateAllSteps(): { errors: Record<string, string>; firstFailingStep: number } {
+    let allErrors: Record<string, string> = {};
+    let firstFailingStep = -1;
+    for (let i = 0; i <= 1; i++) {
+      const stepErrors = validateStep(i);
+      if (Object.keys(stepErrors).length > 0 && firstFailingStep === -1) firstFailingStep = i;
+      allErrors = { ...allErrors, ...stepErrors };
+    }
+    return { errors: allErrors, firstFailingStep };
+  }
+
+  function getFieldErrorClass(field: string): string {
+    return validationErrors[field] ? "border-red-500/50" : "";
   }
 
   // ─── Conflict validation before save/next ─────────────
@@ -123,6 +162,16 @@ export default function EditProjectPage() {
   }
 
   async function handleNext() {
+    const stepErrors = validateStep(currentStep);
+    if (Object.keys(stepErrors).length > 0) {
+      setValidationErrors(prev => ({ ...prev, ...stepErrors }));
+      const labels = Object.values(stepErrors).join(", ");
+      setErrorBanner(`Please fix: ${labels}`);
+      return;
+    }
+    setValidationErrors({});
+    setErrorBanner(null);
+
     if (currentStep === 1) {
       const ok = await validateConflicts();
       if (!ok) return;
@@ -131,6 +180,15 @@ export default function EditProjectPage() {
   }
 
   async function handleSave() {
+    // Validate all steps before saving
+    const { errors, firstFailingStep } = validateAllSteps();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const labels = Object.values(errors).join(", ");
+      setErrorBanner(`Cannot save — missing required fields: ${labels}`);
+      if (firstFailingStep >= 0) setCurrentStep(firstFailingStep);
+      return;
+    }
     // Validate conflicts before saving
     if (form.roomId && form.startDate && form.endDate) {
       const ok = await validateConflicts();
@@ -210,13 +268,24 @@ export default function EditProjectPage() {
       </div>
 
       <div className="glass-card">
+        {/* Validation error banner */}
+        {errorBanner && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-red-400">{errorBanner}</p>
+            </div>
+            <button onClick={() => setErrorBanner(null)} className="text-red-400/60 hover:text-red-400 transition-colors"><X size={16} /></button>
+          </div>
+        )}
         {currentStep === 0 && (
           <div className="animate-in fade-in duration-300">
             <h3 className="text-lg font-bold text-white mb-6">Basic Information</h3>
             <div className="space-y-5">
               <div>
                 <label className={labelClass}>Project Title <span className="text-accent-yellow">*</span></label>
-                <input className={inputClass} value={form.title} onChange={e => updateField("title", e.target.value)} placeholder="E.g. Arabic for Beginners" />
+                <input className={`${inputClass} ${getFieldErrorClass("title")}`} value={form.title} onChange={e => updateField("title", e.target.value)} placeholder="E.g. Arabic for Beginners" />
+                {validationErrors.title && <p className="text-xs text-red-400 mt-1">{validationErrors.title}</p>}
               </div>
               <div>
                 <label className={labelClass}>Description</label>
@@ -256,19 +325,22 @@ export default function EditProjectPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className={labelClass}>Start Date <span className="text-accent-yellow">*</span></label>
-                  <input className={`${inputClass} color-scheme-dark`} type="date" value={form.startDate} onChange={e => updateField("startDate", e.target.value)} />
+                  <input className={`${inputClass} color-scheme-dark ${getFieldErrorClass("startDate")}`} type="date" value={form.startDate} onChange={e => updateField("startDate", e.target.value)} />
+                  {validationErrors.startDate && <p className="text-xs text-red-400 mt-1">{validationErrors.startDate}</p>}
                 </div>
                 <div>
                   <label className={labelClass}>End Date <span className="text-accent-yellow">*</span></label>
-                  <input className={`${inputClass} color-scheme-dark`} type="date" value={form.endDate} onChange={e => updateField("endDate", e.target.value)} />
+                  <input className={`${inputClass} color-scheme-dark ${getFieldErrorClass("endDate")}`} type="date" value={form.endDate} onChange={e => updateField("endDate", e.target.value)} />
+                  {validationErrors.endDate && <p className="text-xs text-red-400 mt-1">{validationErrors.endDate}</p>}
                 </div>
               </div>
               <div>
                 <label className={labelClass}>Room <span className="text-accent-yellow">*</span></label>
-                <select className={selectClass} value={form.roomId} onChange={e => updateField("roomId", e.target.value)}>
+                <select className={`${selectClass} ${getFieldErrorClass("roomId")}`} value={form.roomId} onChange={e => updateField("roomId", e.target.value)}>
                   <option value="" className="bg-background text-white">Select a room</option>
                   {rooms.map(r => <option key={r.id} value={r.id} className="bg-background text-white">{r.name} (capacity: {r.capacity})</option>)}
                 </select>
+                {validationErrors.roomId && <p className="text-xs text-red-400 mt-1">{validationErrors.roomId}</p>}
               </div>
 
               {/* Session Builder */}
@@ -280,6 +352,7 @@ export default function EditProjectPage() {
                 endDate={form.endDate}
                 excludeProjectId={id}
               />
+              {validationErrors.sessionPatterns && <p className="text-xs text-red-400 mt-1">{validationErrors.sessionPatterns}</p>}
             </div>
           </div>
         )}

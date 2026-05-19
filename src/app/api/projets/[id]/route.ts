@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { canReviewProjects, canEditProject, canDeleteProjects } from "@/lib/permissions";
+import { expandAllPatterns, parseTimeToMinutes, type SessionPatternFull } from "@/lib/sessionUtils";
 
 export async function GET(
   _req: Request,
@@ -37,58 +38,34 @@ export async function GET(
 }
 
 // ─── Helper: Generate recurring session records ─────────
-
-interface SessionPatternInput {
-  days: number[];      // 0=Sun, 1=Mon, ..., 6=Sat
-  startTime: string;   // "HH:MM"
-  endTime: string;     // "HH:MM"
-}
+// Uses shared expandAllPatterns to support weekly, biweekly, monthly, and custom frequencies.
 
 async function generateSessionRecords(
   projectId: string,
   roomId: string,
   startDate: Date,
   endDate: Date,
-  patterns: SessionPatternInput[]
+  patterns: SessionPatternFull[]
 ) {
-  const sessions: {
-    projectId: string;
-    roomId: string;
-    startTime: Date;
-    endTime: Date;
-  }[] = [];
+  const expanded = expandAllPatterns(patterns, startDate, endDate);
 
-  for (const pattern of patterns) {
-    if (!pattern.days?.length || !pattern.startTime || !pattern.endTime) continue;
+  const sessions = expanded.map(e => {
+    const [sh, sm] = e.startTime.split(":").map(Number);
+    const [eh, em] = e.endTime.split(":").map(Number);
 
-    const [sh, sm] = pattern.startTime.split(":").map(Number);
-    const [eh, em] = pattern.endTime.split(":").map(Number);
+    const sessionStart = new Date(e.date);
+    sessionStart.setHours(sh, sm, 0, 0);
 
-    for (const targetDay of pattern.days) {
-      // Find first occurrence of this day of week from startDate
-      let current = new Date(startDate);
-      while (current.getDay() !== targetDay) {
-        current.setDate(current.getDate() + 1);
-      }
+    const sessionEnd = new Date(e.date);
+    sessionEnd.setHours(eh, em, 0, 0);
 
-      while (current <= endDate) {
-        const sessionStart = new Date(current);
-        sessionStart.setHours(sh, sm, 0, 0);
-
-        const sessionEnd = new Date(current);
-        sessionEnd.setHours(eh, em, 0, 0);
-
-        sessions.push({
-          projectId,
-          roomId,
-          startTime: sessionStart,
-          endTime: sessionEnd,
-        });
-
-        current.setDate(current.getDate() + 7);
-      }
-    }
-  }
+    return {
+      projectId,
+      roomId,
+      startTime: sessionStart,
+      endTime: sessionEnd,
+    };
+  });
 
   if (sessions.length > 0) {
     await prisma.session.createMany({ data: sessions });
@@ -195,7 +172,7 @@ export async function PATCH(
         if (!canReviewProjects(session.user.role)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         
         // Generate sessions from stored patterns on the project
-        const sessionPatterns: SessionPatternInput[] = project.sessionPatternsJson
+        const sessionPatterns: SessionPatternFull[] = project.sessionPatternsJson
           ? JSON.parse(project.sessionPatternsJson)
           : [];
         const roomId = project.roomId;

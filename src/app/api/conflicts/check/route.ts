@@ -1,25 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { expandAllPatterns, timesOverlap, parseTimeToMinutes, type SessionPatternFull } from "@/lib/sessionUtils";
 
 /**
  * POST /api/conflicts/check
  * 
  * Check for scheduling conflicts between proposed session patterns and existing sessions.
  * Returns hard conflicts (approved/active projects) and soft conflicts (pending/draft projects).
+ * 
+ * Now frequency-aware: expands proposed patterns into concrete dates before comparing.
  */
-
-interface SessionPattern {
-  days: number[];      // 0=Sun, 1=Mon, ..., 6=Sat
-  startTime: string;   // "HH:MM"
-  endTime: string;     // "HH:MM"
-}
 
 interface CheckRequest {
   roomId: string;
   startDate: string;    // ISO date
   endDate: string;      // ISO date
-  sessions: SessionPattern[];
+  sessions: SessionPatternFull[];
   excludeProjectId?: string;  // Exclude this project's own sessions (for edit mode)
 }
 
@@ -50,6 +47,13 @@ export async function POST(req: Request) {
   const proposedStart = new Date(startDate);
   const proposedEnd = new Date(endDate);
 
+  // Expand proposed patterns into concrete dates (frequency-aware)
+  const expandedProposed = expandAllPatterns(proposedSessions, proposedStart, proposedEnd);
+
+  if (expandedProposed.length === 0) {
+    return NextResponse.json({ hardConflicts: [], softConflicts: [] });
+  }
+
   // Fetch all existing sessions in this room that overlap with the proposed date range
   const existingSessions = await prisma.session.findMany({
     where: {
@@ -71,32 +75,28 @@ export async function POST(req: Request) {
 
   for (const existingSession of existingSessions) {
     const sessionDate = new Date(existingSession.startTime);
-    const dayOfWeek = sessionDate.getDay(); // 0=Sun, 1=Mon, ...
     const existingStartMinutes = sessionDate.getHours() * 60 + sessionDate.getMinutes();
     const existingEndDate = new Date(existingSession.endTime);
     const existingEndMinutes = existingEndDate.getHours() * 60 + existingEndDate.getMinutes();
 
-    // Check each proposed session pattern
-    for (const pattern of proposedSessions) {
-      // Check if any proposed day matches this session's day of week
-      if (!pattern.days.includes(dayOfWeek)) continue;
+    // Compare each expanded proposed session against this existing session
+    for (const proposed of expandedProposed) {
+      // Check if same calendar date
+      const proposedDateStr = proposed.date.toISOString().split("T")[0];
+      const existingDateStr = sessionDate.toISOString().split("T")[0];
 
-      // Parse proposed times
-      const [pStartH, pStartM] = pattern.startTime.split(":").map(Number);
-      const [pEndH, pEndM] = pattern.endTime.split(":").map(Number);
-      const proposedStartMinutes = pStartH * 60 + pStartM;
-      const proposedEndMinutes = pEndH * 60 + pEndM;
+      if (proposedDateStr !== existingDateStr) continue;
 
-      // Time overlap check: startA < endB AND endA > startB
-      if (proposedStartMinutes < existingEndMinutes && proposedEndMinutes > existingStartMinutes) {
+      // Check time overlap
+      if (timesOverlap(proposed.startMinutes, proposed.endMinutes, existingStartMinutes, existingEndMinutes)) {
         const conflict: ConflictInfo = {
           projectId: existingSession.project.id,
           projectName: existingSession.project.title,
           projectStatus: existingSession.project.status,
           roomName: existingSession.room.name,
-          day: DAY_NAMES[dayOfWeek],
-          dayNumber: dayOfWeek,
-          time: `${pattern.startTime}–${pattern.endTime}`,
+          day: DAY_NAMES[sessionDate.getDay()],
+          dayNumber: sessionDate.getDay(),
+          time: `${proposed.startTime}–${proposed.endTime}`,
           sessionId: existingSession.id,
         };
 
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // De-duplicate conflicts by project + day
+  // De-duplicate conflicts by project + day + time
   const dedup = (arr: ConflictInfo[]) => {
     const seen = new Set<string>();
     return arr.filter(c => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, X, AlertTriangle, AlertCircle, Clock, Eye, Loader2 } from "lucide-react";
+import { Plus, X, AlertTriangle, AlertCircle, Clock, Eye, Loader2, Repeat } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -9,6 +9,8 @@ export interface SessionPattern {
   days: number[];       // 0=Sun, 1=Mon, ..., 6=Sat
   startTime: string;    // "HH:MM" in 24h
   endTime: string;      // "HH:MM" in 24h
+  frequency?: "weekly" | "biweekly" | "monthly" | "custom";
+  customIntervalDays?: number;
 }
 
 interface ConflictInfo {
@@ -53,6 +55,13 @@ const DAY_NAMES: Record<number, string> = {
   0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday",
   4: "Thursday", 5: "Friday", 6: "Saturday",
 };
+
+const FREQUENCY_OPTIONS = [
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "custom", label: "Custom" },
+];
 
 // Generate time options in 30-min increments from 07:00 to 22:00
 function generateTimeOptions(): { value: string; label: string }[] {
@@ -154,7 +163,7 @@ export default function SessionBuilder({
   }
 
   function addSession() {
-    onChange([...sessions, { days: [], startTime: "16:00", endTime: "17:30" }]);
+    onChange([...sessions, { days: [], startTime: "16:00", endTime: "17:30", frequency: "weekly" }]);
   }
 
   function removeSession(index: number) {
@@ -169,10 +178,25 @@ export default function SessionBuilder({
     if (session.startTime && session.endTime && session.startTime >= session.endTime) {
       errors.push("End time must be after start time");
     }
+    if (session.frequency === "custom" && (!session.customIntervalDays || session.customIntervalDays < 1)) {
+      errors.push("Set a valid interval (≥ 1 day)");
+    }
     return errors;
   }
 
   const hasHardConflicts = conflicts.hardConflicts.length > 0;
+
+  // ─── Frequency display helper ─────────────────────────
+
+  function getFrequencyHint(session: SessionPattern): string | null {
+    const freq = session.frequency || "weekly";
+    switch (freq) {
+      case "biweekly": return "Sessions repeat every 2 weeks";
+      case "monthly": return "Sessions repeat on the first occurrence of each selected day per month";
+      case "custom": return `Sessions repeat every ${session.customIntervalDays || "?"} days`;
+      default: return null;
+    }
+  }
 
   // ─── Render ───────────────────────────────────────────
 
@@ -217,6 +241,8 @@ export default function SessionBuilder({
       <div className={`space-y-3 ${isDisabled ? "opacity-40 pointer-events-none select-none" : ""}`}>
         {sessions.map((session, index) => {
           const errors = getRowErrors(session);
+          const freq = session.frequency || "weekly";
+          const frequencyHint = getFrequencyHint(session);
           // Find conflicts for this row
           const rowHardConflicts = conflicts.hardConflicts.filter(c =>
             session.days.includes(c.dayNumber)
@@ -301,6 +327,52 @@ export default function SessionBuilder({
                   </button>
                 )}
               </div>
+
+              {/* Frequency selector */}
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-2">
+                  <Repeat size={14} className="text-text-secondary shrink-0" />
+                  <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider shrink-0">Frequency</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {FREQUENCY_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateSession(index, { frequency: opt.value as SessionPattern["frequency"] })}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border ${
+                        freq === opt.value
+                          ? "bg-accent-cyan/20 text-accent-cyan border-accent-cyan/40"
+                          : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom interval input */}
+                {freq === "custom" && (
+                  <div className="flex items-center gap-2 ml-1">
+                    <span className="text-xs text-text-secondary">Every</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      className="w-16 bg-glass-surface border border-glass-border rounded-lg px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-accent-cyan transition-colors"
+                      value={session.customIntervalDays || ""}
+                      onChange={e => updateSession(index, { customIntervalDays: parseInt(e.target.value) || undefined })}
+                      placeholder="7"
+                    />
+                    <span className="text-xs text-text-secondary">days</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Frequency hint */}
+              {frequencyHint && (
+                <p className="text-[11px] text-text-secondary/70 mt-2 pl-0.5 italic">{frequencyHint}</p>
+              )}
 
               {/* Validation errors */}
               {errors.length > 0 && (
@@ -391,40 +463,36 @@ function AvailabilityPanel({ roomId, startDate, endDate, excludeProjectId }: {
   excludeProjectId?: string;
 }) {
   const [bookedSlots, setBookedSlots] = useState<{ day: number; startMinutes: number; endMinutes: number; project: string }[]>([]);
+  const [tentativeSlots, setTentativeSlots] = useState<{ day: number; startMinutes: number; endMinutes: number; project: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/conflicts/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        roomId,
-        startDate,
-        endDate,
-        sessions: DAYS.map(d => ({
-          days: [d.value],
-          startTime: "07:00",
-          endTime: "22:00",
-        })),
-        excludeProjectId,
-      }),
-    })
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+      ...(excludeProjectId ? { excludeProjectId } : {}),
+    });
+
+    fetch(`/api/rooms/${roomId}/availability?${params.toString()}`)
       .then(r => r.json())
       .then(data => {
-        // Parse conflicts into booked slots
-        const slots = (data.hardConflicts || []).map((c: any) => {
-          const [start, end] = c.time.split("–");
-          const [sh, sm] = (start || "").split(":").map(Number);
-          const [eh, em] = (end || "").split(":").map(Number);
-          return {
-            day: c.dayNumber,
-            startMinutes: (sh || 0) * 60 + (sm || 0),
-            endMinutes: (eh || 0) * 60 + (em || 0),
-            project: c.projectName,
-          };
-        });
-        setBookedSlots(slots);
+        setBookedSlots(
+          (data.bookedSlots || []).map((s: any) => ({
+            day: s.day,
+            startMinutes: s.startMinutes,
+            endMinutes: s.endMinutes,
+            project: s.projectName,
+          }))
+        );
+        setTentativeSlots(
+          (data.tentativeSlots || []).map((s: any) => ({
+            day: s.day,
+            startMinutes: s.startMinutes,
+            endMinutes: s.endMinutes,
+            project: s.projectName,
+          }))
+        );
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -432,13 +500,23 @@ function AvailabilityPanel({ roomId, startDate, endDate, excludeProjectId }: {
 
   const HOURS_DISPLAY = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
-  function isSlotBooked(day: number, hour: number): { booked: boolean; project?: string } {
+  function getSlotStatus(day: number, hour: number): { status: "available" | "booked" | "tentative"; project?: string } {
     const slotStart = hour * 60;
     const slotEnd = (hour + 1) * 60;
-    const conflict = bookedSlots.find(
+
+    // Check booked first (higher priority)
+    const booked = bookedSlots.find(
       s => s.day === day && s.startMinutes < slotEnd && s.endMinutes > slotStart
     );
-    return conflict ? { booked: true, project: conflict.project } : { booked: false };
+    if (booked) return { status: "booked", project: booked.project };
+
+    // Check tentative
+    const tentative = tentativeSlots.find(
+      s => s.day === day && s.startMinutes < slotEnd && s.endMinutes > slotStart
+    );
+    if (tentative) return { status: "tentative", project: tentative.project };
+
+    return { status: "available" };
   }
 
   if (loading) {
@@ -454,7 +532,7 @@ function AvailabilityPanel({ roomId, startDate, endDate, excludeProjectId }: {
     <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="p-3 border-b border-white/10 flex items-center gap-2">
         <Eye size={14} className="text-accent-cyan" />
-        <span className="text-xs font-bold text-white">Room Availability (Approved Projects Only)</span>
+        <span className="text-xs font-bold text-white">Room Availability</span>
       </div>
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-[10px] border-collapse min-w-[500px]">
@@ -473,12 +551,20 @@ function AvailabilityPanel({ roomId, startDate, endDate, excludeProjectId }: {
               <tr key={day.value} className="border-b border-white/5 hover:bg-white/[0.02]">
                 <td className="p-2 text-white font-bold">{day.label}</td>
                 {HOURS_DISPLAY.map(h => {
-                  const { booked, project } = isSlotBooked(day.value, h);
+                  const { status, project } = getSlotStatus(day.value, h);
+                  const title = status === "booked"
+                    ? `Booked: ${project}`
+                    : status === "tentative"
+                    ? `Tentative: ${project} (pending approval)`
+                    : "Available";
+
                   return (
-                    <td key={h} className="p-1" title={booked ? `Booked: ${project}` : "Available"}>
+                    <td key={h} className="p-1" title={title}>
                       <div className={`w-full h-5 rounded-sm transition-colors ${
-                        booked
+                        status === "booked"
                           ? "bg-red-500/30 border border-red-500/40"
+                          : status === "tentative"
+                          ? "bg-amber-500/25 border border-amber-500/35"
                           : "bg-accent-lime/15 border border-accent-lime/20"
                       }`} />
                     </td>
@@ -492,6 +578,9 @@ function AvailabilityPanel({ roomId, startDate, endDate, excludeProjectId }: {
       <div className="p-3 border-t border-white/10 flex items-center gap-4 text-[10px] text-text-secondary">
         <span className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-accent-lime/15 border border-accent-lime/20" /> Available
+        </span>
+        <span className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-amber-500/25 border border-amber-500/35" /> Tentative
         </span>
         <span className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-red-500/30 border border-red-500/40" /> Booked
